@@ -1,13 +1,15 @@
 [
 {
-  "modid": "funkylocomotion",
-  "name": "Funky Locomotion",
+  "modid": "${modId}",
+  "name": "${modName}",
   "description": "The world in a grove",
-  "version": "${version}",
-  "mcversion": "${mcversion}",
-  "url": "",
-  "updateUrl": "",
-  "authorList": ["RWTema"],
+  "version": "${modVersion}",
+  "mcversion": "${minecraftVersion}",
+  "url": "https://github.com/MrFuzzihead/FunkyLocomotion",
+  "updateUrl": "https://github.com/MrFuzzihead/FunkyLocomotion/releases/latest",
+  "authors": [
+    "RWTema", "MrFuzzihead"
+  ],
   "credits": "",
   "logoFile": "",
   "screenshots": [],

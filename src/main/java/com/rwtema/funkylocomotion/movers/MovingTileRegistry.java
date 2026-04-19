@@ -1,10 +1,11 @@
 package com.rwtema.funkylocomotion.movers;
 
+import java.util.Iterator;
+import java.util.List;
+
 import com.google.common.collect.Lists;
 import com.rwtema.funkylocomotion.blocks.TileMovingServer;
 import com.rwtema.funkylocomotion.helper.WeakSet;
-import java.util.Iterator;
-import java.util.List;
 
 public class MovingTileRegistry {
 
@@ -24,12 +25,11 @@ public class MovingTileRegistry {
         Iterator<TileMovingServer> iterator = movingTilesSet.iterator();
         while (iterator.hasNext()) {
             TileMovingServer tile = iterator.next();
-            if (tile.isInvalid())
-                iterator.remove();
+            if (tile.isInvalid()) iterator.remove();
             else if (tile.hasWorldObj() && tile.time >= tile.maxTime
-                    && tile.getWorldObj().blockExists(tile.xCoord, tile.yCoord, tile.zCoord) // ensure the tile isn't in mid-chunk-load
-                    )
-                list.add(tile);
+                && tile.getWorldObj()
+                    .blockExists(tile.xCoord, tile.yCoord, tile.zCoord) // ensure the tile isn't in mid-chunk-load
+            ) list.add(tile);
         }
 
         return list;

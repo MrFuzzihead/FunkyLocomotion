@@ -1,16 +1,19 @@
 package com.rwtema.funkylocomotion.factory;
 
-import com.rwtema.funkylocomotion.helper.BlockHelper;
-import framesapi.BlockPos;
-import framesapi.IMoveFactory;
+import java.util.HashMap;
+import java.util.Map;
+
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.rwtema.funkylocomotion.helper.BlockHelper;
+
+import framesapi.BlockPos;
+import framesapi.IMoveFactory;
 
 public class FactoryRegistry {
+
     public static final Map<Block, IMoveFactory> moveFactoryMapBlock = new HashMap<Block, IMoveFactory>();
     public static final Map<Class<? extends Block>, IMoveFactory> moveFactoryMapBlockClass = new HashMap<Class<? extends Block>, IMoveFactory>();
     public static final Map<Class<?>, IMoveFactory> moveFactoryMapInheritanceClass = new HashMap<Class<?>, IMoveFactory>();
@@ -22,31 +25,26 @@ public class FactoryRegistry {
     }
 
     public static IMoveFactory getFactory(TileEntity tile) {
-        if (tile == null)
-            return null;
+        if (tile == null) return null;
 
-        if (tile instanceof IMoveFactory)
-            return (IMoveFactory) tile;
+        if (tile instanceof IMoveFactory) return (IMoveFactory) tile;
 
         for (Map.Entry<Class<?>, IMoveFactory> clazz : moveFactoryMapInheritanceClass.entrySet()) {
-            if (clazz.getKey().isAssignableFrom(tile.getClass()))
-                return clazz.getValue();
+            if (clazz.getKey()
+                .isAssignableFrom(tile.getClass())) return clazz.getValue();
         }
 
         return null;
     }
 
     public static IMoveFactory getFactory(Block b) {
-        if (b instanceof IMoveFactory)
-            return (IMoveFactory) b;
+        if (b instanceof IMoveFactory) return (IMoveFactory) b;
 
         IMoveFactory f = moveFactoryMapBlock.get(b);
-        if (f != null)
-            return (f);
+        if (f != null) return (f);
 
         f = moveFactoryMapBlockClass.get(b.getClass());
-        if (f != null)
-            return (f);
+        if (f != null) return (f);
 
         return getDefaultFactory();
     }

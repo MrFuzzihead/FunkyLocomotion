@@ -4,6 +4,7 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 
 public class CreativeTabFrames extends CreativeTabs {
+
     public CreativeTabFrames() {
         super(FunkyLocomotion.MODID);
     }

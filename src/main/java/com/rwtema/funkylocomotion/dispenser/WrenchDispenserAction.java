@@ -1,9 +1,5 @@
 package com.rwtema.funkylocomotion.dispenser;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-import com.rwtema.funkylocomotion.blocks.BlockFrame;
-import com.rwtema.funkylocomotion.helper.BlockHelper;
-import framesapi.BlockPos;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
@@ -11,6 +7,12 @@ import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
+
+import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.blocks.BlockFrame;
+import com.rwtema.funkylocomotion.helper.BlockHelper;
+
+import framesapi.BlockPos;
 
 public class WrenchDispenserAction extends BehaviorDefaultDispenseItem {
 
@@ -20,9 +22,9 @@ public class WrenchDispenserAction extends BehaviorDefaultDispenseItem {
             EnumFacing facing = BlockDispenser.func_149937_b(pos.getBlockMetadata());
             World world = pos.getWorld();
             BlockPos p = new BlockPos(
-                    pos.getXInt() + facing.getFrontOffsetX(),
-                    pos.getYInt() + facing.getFrontOffsetY(),
-                    pos.getZInt() + facing.getFrontOffsetZ());
+                pos.getXInt() + facing.getFrontOffsetX(),
+                pos.getYInt() + facing.getFrontOffsetY(),
+                pos.getZInt() + facing.getFrontOffsetZ());
             Block block = BlockHelper.getBlock(world, p);
             if (block instanceof BlockFrame) {
                 BlockHelper.breakBlockWithDrop(world, p);

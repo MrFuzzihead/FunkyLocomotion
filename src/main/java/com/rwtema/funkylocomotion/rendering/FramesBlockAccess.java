@@ -1,8 +1,5 @@
 package com.rwtema.funkylocomotion.rendering;
 
-import com.rwtema.funkylocomotion.blocks.TileMovingClient;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
@@ -11,7 +8,13 @@ import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.blocks.TileMovingClient;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
 public class FramesBlockAccess implements IBlockAccess {
+
     public final IBlockAccess world;
 
     public FramesBlockAccess(World world) {

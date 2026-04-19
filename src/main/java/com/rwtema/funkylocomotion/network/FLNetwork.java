@@ -1,17 +1,19 @@
 package com.rwtema.funkylocomotion.network;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
-import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
-import cpw.mods.fml.relauncher.Side;
-import framesapi.BlockPos;
+import java.util.WeakHashMap;
+
 import net.minecraft.server.management.PlayerManager;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 
-import java.util.WeakHashMap;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import cpw.mods.fml.relauncher.Side;
+import framesapi.BlockPos;
 
 public class FLNetwork {
+
     public static SimpleNetworkWrapper net;
     private static final WeakHashMap<World, PlayerManager> cache = new WeakHashMap<World, PlayerManager>();
 
@@ -26,16 +28,14 @@ public class FLNetwork {
     public static void sendToAllWatchingChunk(World world, int x, int y, int z, IMessage message) {
         PlayerManager.PlayerInstance watcher = getChunkWatcher(world, x, z);
 
-        if (watcher != null)
-            watcher.sendToAllPlayersWatchingChunk(net.getPacketFrom(message));
+        if (watcher != null) watcher.sendToAllPlayersWatchingChunk(net.getPacketFrom(message));
     }
 
     private static PlayerManager getPlayerManager(World world) {
         if (!cache.containsKey(world)) {
             if (!(world instanceof WorldServer)) {
                 cache.put(world, null);
-            } else
-                cache.put(world, ((WorldServer) world).getPlayerManager());
+            } else cache.put(world, ((WorldServer) world).getPlayerManager());
         }
 
         return cache.get(world);
@@ -47,13 +47,14 @@ public class FLNetwork {
         if (watcher != null) watcher.sendChunkUpdate();
     }
 
-	public static PlayerManager.PlayerInstance getChunkWatcher(Chunk chunk) {
-		return getChunkWatcher(chunk, chunk.worldObj);
-	}
+    public static PlayerManager.PlayerInstance getChunkWatcher(Chunk chunk) {
+        return getChunkWatcher(chunk, chunk.worldObj);
+    }
 
     public static PlayerManager.PlayerInstance getChunkWatcher(Chunk chunk, World world) {
         PlayerManager playerManager = getPlayerManager(world);
-        return playerManager != null ? playerManager.getOrCreateChunkWatcher(chunk.xPosition, chunk.zPosition, false) : null;
+        return playerManager != null ? playerManager.getOrCreateChunkWatcher(chunk.xPosition, chunk.zPosition, false)
+            : null;
     }
 
     public static PlayerManager.PlayerInstance getChunkWatcher(World world, BlockPos pos) {

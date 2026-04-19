@@ -1,13 +1,13 @@
 package com.rwtema.funkylocomotion.movepermissions;
 
-import net.minecraft.block.Block;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+
+import net.minecraft.block.Block;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.World;
 
 public class MoveCheckReflector implements IMoveChecker {
 
@@ -25,8 +25,7 @@ public class MoveCheckReflector implements IMoveChecker {
     private static boolean _canMoveClass(Class<?> clazz) {
         try {
             Method method = clazz.getMethod("_Immovable");
-            if (Modifier.isStatic(method.getModifiers()) &&
-                    Modifier.isPublic(method.getModifiers()))
+            if (Modifier.isStatic(method.getModifiers()) && Modifier.isPublic(method.getModifiers()))
                 if (method.getReturnType() == boolean.class) {
                     Boolean b = (Boolean) method.invoke(null);
                     return b == null || !b;
@@ -38,15 +37,14 @@ public class MoveCheckReflector implements IMoveChecker {
             return true;
         } catch (IllegalAccessException e) {
             return true;
-        }catch (RuntimeException e){
+        } catch (RuntimeException e) {
             return true;
-            
+
         } catch (Throwable e) {
             e.printStackTrace();
             return true;
         }
     }
-
 
     @Override
     public boolean preventMovement(World world, int x, int y, int z, Block block, int meta, TileEntity tile) {

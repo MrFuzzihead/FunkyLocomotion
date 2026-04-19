@@ -1,9 +1,8 @@
 package com.rwtema.funkylocomotion.blocks;
 
-import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import java.util.List;
+import java.util.Random;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
@@ -18,10 +17,14 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import java.util.List;
-import java.util.Random;
+import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 public class BlockMoving extends Block {
+
     public static BlockMoving instance;
 
     public static IIcon crate;
@@ -46,23 +49,20 @@ public class BlockMoving extends Block {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void addCollisionBoxesToList(World world, int x, int y, int z, AxisAlignedBB axis, List list, Entity entity) {
+    public void addCollisionBoxesToList(World world, int x, int y, int z, AxisAlignedBB axis, List list,
+        Entity entity) {
         TileEntity tile = world.getTileEntity(x, y, z);
-        if (!(tile instanceof TileMovingBase))
-            return;
+        if (!(tile instanceof TileMovingBase)) return;
 
         for (AxisAlignedBB bb : ((TileMovingBase) tile).getTransformedColisions())
-            if (axis.intersectsWith(bb))
-                list.add(bb);
+            if (axis.intersectsWith(bb)) list.add(bb);
 
         ForgeDirection d = ForgeDirection.getOrientation(((TileMovingBase) tile).dir);
         TileEntity tile2 = world.getTileEntity(x + d.offsetX, y + d.offsetY, z + d.offsetZ);
-        if (!(tile2 instanceof TileMovingBase))
-            return;
+        if (!(tile2 instanceof TileMovingBase)) return;
 
         for (AxisAlignedBB bb : ((TileMovingBase) tile2).getTransformedColisions())
-            if (axis.intersectsWith(bb))
-                list.add(bb);
+            if (axis.intersectsWith(bb)) list.add(bb);
     }
 
     @Override
@@ -70,8 +70,7 @@ public class BlockMoving extends Block {
         this.setBlockBounds(0, 0, 0, 1, 1, 1);
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile instanceof TileMovingBase) {
-            if (((TileMovingBase) tile).isAir)
-                this.setBlockBounds(0, 0, 0, 0, 0, 0);
+            if (((TileMovingBase) tile).isAir) this.setBlockBounds(0, 0, 0, 0, 0, 0);
         }
     }
 
@@ -88,10 +87,9 @@ public class BlockMoving extends Block {
 
     @Override
     public TileEntity createTileEntity(World world, int metadata) {
-        if (world.isRemote || FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT)
-            return new TileMovingClient();
-        else
-            return new TileMovingServer();
+        if (world.isRemote || FMLCommonHandler.instance()
+            .getEffectiveSide() == Side.CLIENT) return new TileMovingClient();
+        else return new TileMovingServer();
     }
 
     @Override
@@ -118,7 +116,8 @@ public class BlockMoving extends Block {
     @Override
     public int getLightValue(IBlockAccess world, int x, int y, int z) {
         TileEntity tile = world.getTileEntity(x, y, z);
-        return tile instanceof TileMovingBase ? ((TileMovingBase) tile).lightLevel : super.getLightValue(world, x, y, z);
+        return tile instanceof TileMovingBase ? ((TileMovingBase) tile).lightLevel
+            : super.getLightValue(world, x, y, z);
     }
 
     @Override
@@ -134,13 +133,14 @@ public class BlockMoving extends Block {
     @Override
     public int getLightOpacity(IBlockAccess world, int x, int y, int z) {
         TileEntity tile = world.getTileEntity(x, y, z);
-        return tile instanceof TileMovingBase ? ((TileMovingBase) tile).lightOpacity : super.getLightOpacity(world, x, y, z);
+        return tile instanceof TileMovingBase ? ((TileMovingBase) tile).lightOpacity
+            : super.getLightOpacity(world, x, y, z);
     }
 
     @Override
-    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
-        if (world.isRemote)
-            return true;
+    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+        float hitY, float hitZ) {
+        if (world.isRemote) return true;
 
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile instanceof TileMovingServer) {
@@ -153,7 +153,7 @@ public class BlockMoving extends Block {
     @Override
     @SideOnly(Side.CLIENT)
     public void randomDisplayTick(World world, int x, int y, int z, Random rand) {
-        if(!FakeWorldClient.isValid(world)) return;
+        if (!FakeWorldClient.isValid(world)) return;
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile instanceof TileMovingClient) {
             TileMovingClient mover = (TileMovingClient) tile;

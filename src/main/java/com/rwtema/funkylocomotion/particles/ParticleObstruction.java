@@ -1,31 +1,37 @@
 package com.rwtema.funkylocomotion.particles;
 
+import java.util.Random;
+
 import net.minecraft.client.particle.EntityReddustFX;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.World;
+
 import org.lwjgl.opengl.GL11;
 
-import java.util.Random;
-
 public class ParticleObstruction extends EntityReddustFX {
+
     public static final Random RANDOM = new Random();
-    public static final float r = 98/255.0F;
-    public static final float g = 142/255.0F;
-    public static final float b = 94/255.0F;
+    public static final float r = 98 / 255.0F;
+    public static final float g = 142 / 255.0F;
+    public static final float b = 94 / 255.0F;
 
     public ParticleObstruction(World world, int x, int y, int z, byte side) {
-        super(world,
-                x + (side == 4 ? 0 : side == 5 ? 1 : RANDOM.nextDouble()),
-                y + (side == 0 ? 0 : side == 1 ? 1 : RANDOM.nextDouble()),
-                z + (side == 2 ? 0 : side == 3 ? 1 : RANDOM.nextDouble()),
-                0,0,0);
+        super(
+            world,
+            x + (side == 4 ? 0 : side == 5 ? 1 : RANDOM.nextDouble()),
+            y + (side == 0 ? 0 : side == 1 ? 1 : RANDOM.nextDouble()),
+            z + (side == 2 ? 0 : side == 3 ? 1 : RANDOM.nextDouble()),
+            0,
+            0,
+            0);
         this.noClip = true;
         this.particleMaxAge *= 2;
     }
 
     @Override
-    public void renderParticle(Tessellator tessellator, float partialTickTime, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
-        if(!ObstructionHelper.shouldRenderParticles()) return;
+    public void renderParticle(Tessellator tessellator, float partialTickTime, float rotationX, float rotationZ,
+        float rotationYZ, float rotationXY, float rotationXZ) {
+        if (!ObstructionHelper.shouldRenderParticles()) return;
         super.renderParticle(tessellator, partialTickTime, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
         tessellator.draw();
 
@@ -38,4 +44,3 @@ public class ParticleObstruction extends EntityReddustFX {
         tessellator.startDrawingQuads();
     }
 }
-

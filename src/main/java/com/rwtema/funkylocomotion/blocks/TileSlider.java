@@ -1,14 +1,17 @@
 package com.rwtema.funkylocomotion.blocks;
 
-import com.rwtema.funkylocomotion.helper.BlockHelper;
-import framesapi.BlockPos;
 import java.util.List;
+
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import com.rwtema.funkylocomotion.helper.BlockHelper;
+
+import framesapi.BlockPos;
 
 public class TileSlider extends TilePusher {
 
@@ -21,15 +24,8 @@ public class TileSlider extends TilePusher {
         slideDir = slide.getRotation(dir);
     }
 
-    private static final int[][] orthog = {
-            {6, 6, 5, 4, 3, 2, 6},
-            {6, 6, 4, 5, 2, 3, 6},
-            {5, 4, 6, 6, 1, 0, 6},
-            {4, 5, 6, 6, 0, 1, 6},
-            {3, 2, 1, 0, 6, 6, 6},
-            {2, 3, 0, 1, 6, 6, 6},
-            {6, 6, 6, 6, 6, 6, 6}
-    };
+    private static final int[][] orthog = { { 6, 6, 5, 4, 3, 2, 6 }, { 6, 6, 4, 5, 2, 3, 6 }, { 5, 4, 6, 6, 1, 0, 6 },
+        { 4, 5, 6, 6, 0, 1, 6 }, { 3, 2, 1, 0, 6, 6, 6 }, { 2, 3, 0, 1, 6, 6, 6 }, { 6, 6, 6, 6, 6, 6, 6 } };
 
     public static ForgeDirection getOrthogonal(ForgeDirection a, ForgeDirection b) {
         return ForgeDirection.getOrientation(orthog[a.ordinal()][b.ordinal()]);
@@ -45,7 +41,6 @@ public class TileSlider extends TilePusher {
 
             slideDir = ForgeDirection.getOrientation(j);
         }
-
 
         return slideDir;
     }
@@ -72,7 +67,9 @@ public class TileSlider extends TilePusher {
 
     @Override
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
-        slideDir = ForgeDirection.getOrientation(pkt.func_148857_g().getByte("dir"));
+        slideDir = ForgeDirection.getOrientation(
+            pkt.func_148857_g()
+                .getByte("dir"));
         if (worldObj.blockExists(xCoord, yCoord, zCoord)) {
             worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         }
@@ -95,8 +92,7 @@ public class TileSlider extends TilePusher {
         ForgeDirection slide = getSlideDir();
         BlockPos advance = home.advance(dir);
 
-        if (BlockHelper.canStick(world, advance, dir.getOpposite()))
-            return getBlocks(world, home, advance, slide);
+        if (BlockHelper.canStick(world, advance, dir.getOpposite())) return getBlocks(world, home, advance, slide);
 
         return null;
     }

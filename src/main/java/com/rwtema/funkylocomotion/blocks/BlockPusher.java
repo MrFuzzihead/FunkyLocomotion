@@ -1,10 +1,7 @@
 package com.rwtema.funkylocomotion.blocks;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-import com.rwtema.funkylocomotion.helper.ItemHelper;
-import com.rwtema.funkylocomotion.movers.MoverEventHandler;
-import framesapi.BlockPos;
-import framesapi.ISlipperyBlock;
+import java.util.List;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
@@ -19,9 +16,15 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import java.util.List;
+import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.helper.ItemHelper;
+import com.rwtema.funkylocomotion.movers.MoverEventHandler;
+
+import framesapi.BlockPos;
+import framesapi.ISlipperyBlock;
 
 public class BlockPusher extends Block implements ISlipperyBlock {
+
     public static IIcon iconFront;
     public static IIcon iconSide;
     public static IIcon iconSide2;
@@ -57,26 +60,25 @@ public class BlockPusher extends Block implements ISlipperyBlock {
     }
 
     @Override
-    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
+    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+        float hitY, float hitZ) {
         if (!world.isRemote) {
             ItemStack item = player.getHeldItem();
-            if (!(ItemHelper.isWrench(item)))
-                return false;
+            if (!(ItemHelper.isWrench(item))) return false;
 
             final int meta = world.getBlockMetadata(x, y, z);
-            if ((meta < 6 ? 0 : 6) + side == meta)
-                side = Facing.oppositeSide[side];
+            if ((meta < 6 ? 0 : 6) + side == meta) side = Facing.oppositeSide[side];
 
             world.setBlockMetadataWithNotify(x, y, z, (meta < 6 ? 0 : 6) + side, 3);
         }
         return true;
     }
 
-
     @Override
     public IIcon getIcon(int side, int meta) {
         final int dir = Facing.oppositeSide[meta % 6];
-        return side == dir ? meta >= 6 ? iconFront2 : iconFront : side == Facing.oppositeSide[dir] ? blockIcon : meta >= 6 ? iconSide2 : iconSide;
+        return side == dir ? meta >= 6 ? iconFront2 : iconFront
+            : side == Facing.oppositeSide[dir] ? blockIcon : meta >= 6 ? iconSide2 : iconSide;
     }
 
     @Override
@@ -86,21 +88,20 @@ public class BlockPusher extends Block implements ISlipperyBlock {
 
     @Override
     public boolean canStickTo(World world, BlockPos pos, ForgeDirection dir) {
-        return dir != ForgeDirection.UNKNOWN && (world.getBlockMetadata(pos.x, pos.y, pos.z) % 6) != dir.getOpposite().ordinal();
+        return dir != ForgeDirection.UNKNOWN && (world.getBlockMetadata(pos.x, pos.y, pos.z) % 6) != dir.getOpposite()
+            .ordinal();
     }
 
     @Override
     public void onNeighborBlockChange(World world, int x, int y, int z, Block block) {
         TileEntity tile = world.getTileEntity(x, y, z);
-        if (!(tile instanceof TilePusher))
-            return;
+        if (!(tile instanceof TilePusher)) return;
 
         TilePusher tilePush = (TilePusher) tile;
 
         tilePush.powered = world.isBlockIndirectlyGettingPowered(x, y, z);
 
-        if (tilePush.powered)
-            MoverEventHandler.registerMover(tilePush);
+        if (tilePush.powered) MoverEventHandler.registerMover(tilePush);
 
         super.onNeighborBlockChange(world, x, y, z, block);
     }

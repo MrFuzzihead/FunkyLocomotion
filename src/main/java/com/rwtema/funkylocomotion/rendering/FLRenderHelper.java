@@ -1,7 +1,5 @@
 package com.rwtema.funkylocomotion.rendering;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
@@ -9,8 +7,12 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
 @SideOnly(Side.CLIENT)
 public class FLRenderHelper {
+
     public static void renderItemFace(Block b, int meta, int side, RenderBlocks renderBlocks) {
         renderItemFace(renderBlocks.getBlockIconFromSideAndMetadata(b, side, meta), side, renderBlocks);
     }
@@ -29,7 +31,6 @@ public class FLRenderHelper {
             Tessellator.instance.draw();
         }
     }
-
 
     public static void renderFace(int x, int y, int z, IIcon icon, int side, RenderBlocks renderBlocks) {
         Blocks.stone.setBlockBounds(0, 0, 0, 1, 1, 1);

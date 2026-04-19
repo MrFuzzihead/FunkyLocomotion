@@ -1,9 +1,9 @@
 package com.rwtema.funkylocomotion;
 
-import com.rwtema.funkylocomotion.items.ItemBlockTeleporter;
-import com.rwtema.funkylocomotion.items.ItemWrench;
-import cpw.mods.fml.common.registry.GameRegistry;
+import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPELESS;
+
 import java.util.ArrayList;
+
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.InventoryCrafting;
@@ -11,101 +11,193 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.oredict.RecipeSorter;
-import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPELESS;
 import net.minecraftforge.oredict.ShapedOreRecipe;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
 
+import com.rwtema.funkylocomotion.items.ItemBlockTeleporter;
+import com.rwtema.funkylocomotion.items.ItemWrench;
+
+import cpw.mods.fml.common.registry.GameRegistry;
+
 public class Recipes {
-	public static boolean shouldAddRecipes;
-	public static boolean shouldAddFrameCopyResetRecipes;
 
-	public static void addRecipes() {
-		for (String s : OreDictionary.getOreNames()) {
-			if (s.startsWith("ingot"))
-				LogHelper.info(s);
-		}
+    public static boolean shouldAddRecipes;
+    public static boolean shouldAddFrameCopyResetRecipes;
 
-		if (shouldAddRecipes) {
-			Object lapis = "gemLapis";
-			Object gearEnderium = getOreWithVanillaFallback(Blocks.piston, "thermalexpansion:machineFrame");
-			Object diamond = "gemDiamond";
-			Object nuggetSignalum = getOreWithVanillaFallback("dustRedstone", "nuggetSignalum");
-			Object ingotInvar = getOreWithVanillaFallback(Blocks.heavy_weighted_pressure_plate, "ingotInvar");
-			Object IngotInvarIron = getOreWithVanillaFallback("ingotIron", "ingotInvar", "ingotSteel");
-			Object nuggetInvar = getOreWithVanillaFallback("stickWood", "nuggetInvar", "nuggetIron");
-			Object nuggetIron = getOreWithVanillaFallback("stickWood", "nuggetIron");
-			Object nuggetEnderium = getOreWithVanillaFallback(Items.ender_eye, "nuggetEnderium", "ingotPhasedIron");
-			Object dustEnderium = getOreWithVanillaFallback(Items.ender_pearl, "dustEnderium", "nuggetPhasedIron");
-			Object ingotElectrum = getOreWithVanillaFallback("ingotGold", "ingotElectrum", "ingotPhasedGold");
+    public static void addRecipes() {
+        for (String s : OreDictionary.getOreNames()) {
+            if (s.startsWith("ingot")) LogHelper.info(s);
+        }
 
-			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(FunkyLocomotion.frame[0], 8, 0), "III", "i i", "III", 'I', ingotInvar, 'i', nuggetInvar));
-			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchNormal), "I  ", " i ", "  I", 'I', "ingotIron", 'i', nuggetIron));
-			GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchEye), Items.ender_eye, dustEnderium, dustEnderium, new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchNormal)));
-			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchHammer), "WIW"," i "," i ", 'I', IngotInvarIron, 'W', new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchNormal), 'i', "ingotIron"));
-			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(FunkyLocomotion.pusher, 1, 0), "EEE", "CGC", "CTC", 'E', nuggetEnderium, 'G', gearEnderium, 'C', ingotInvar, 'T', diamond));
-			GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(FunkyLocomotion.pusher, 1, 6), new ItemStack(FunkyLocomotion.pusher, 1, 0), "slimeball", "dustRedstone", "dustRedstone", "dustRedstone"));
-			GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(FunkyLocomotion.slider, 1, 0), new ItemStack(FunkyLocomotion.pusher, 1, 0), nuggetSignalum, lapis, lapis, lapis));
-			GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(FunkyLocomotion.booster, 1, 0), "EEE", "CGC", "CTC", 'E', ingotElectrum, 'G', gearEnderium, 'C', ingotInvar, 'T', FunkyLocomotion.pusher));
+        if (shouldAddRecipes) {
+            Object lapis = "gemLapis";
+            Object gearEnderium = getOreWithVanillaFallback(Blocks.piston, "thermalexpansion:machineFrame");
+            Object diamond = "gemDiamond";
+            Object nuggetSignalum = getOreWithVanillaFallback("dustRedstone", "nuggetSignalum");
+            Object ingotInvar = getOreWithVanillaFallback(Blocks.heavy_weighted_pressure_plate, "ingotInvar");
+            Object IngotInvarIron = getOreWithVanillaFallback("ingotIron", "ingotInvar", "ingotSteel");
+            Object nuggetInvar = getOreWithVanillaFallback("stickWood", "nuggetInvar", "nuggetIron");
+            Object nuggetIron = getOreWithVanillaFallback("stickWood", "nuggetIron");
+            Object nuggetEnderium = getOreWithVanillaFallback(Items.ender_eye, "nuggetEnderium", "ingotPhasedIron");
+            Object dustEnderium = getOreWithVanillaFallback(Items.ender_pearl, "dustEnderium", "nuggetPhasedIron");
+            Object ingotElectrum = getOreWithVanillaFallback("ingotGold", "ingotElectrum", "ingotPhasedGold");
 
+            GameRegistry.addRecipe(
+                new ShapedOreRecipe(
+                    new ItemStack(FunkyLocomotion.frame[0], 8, 0),
+                    "III",
+                    "i i",
+                    "III",
+                    'I',
+                    ingotInvar,
+                    'i',
+                    nuggetInvar));
+            GameRegistry.addRecipe(
+                new ShapedOreRecipe(
+                    new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchNormal),
+                    "I  ",
+                    " i ",
+                    "  I",
+                    'I',
+                    "ingotIron",
+                    'i',
+                    nuggetIron));
+            GameRegistry.addRecipe(
+                new ShapelessOreRecipe(
+                    new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchEye),
+                    Items.ender_eye,
+                    dustEnderium,
+                    dustEnderium,
+                    new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchNormal)));
+            GameRegistry.addRecipe(
+                new ShapedOreRecipe(
+                    new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchHammer),
+                    "WIW",
+                    " i ",
+                    " i ",
+                    'I',
+                    IngotInvarIron,
+                    'W',
+                    new ItemStack(FunkyLocomotion.wrench, 1, ItemWrench.metaWrenchNormal),
+                    'i',
+                    "ingotIron"));
+            GameRegistry.addRecipe(
+                new ShapedOreRecipe(
+                    new ItemStack(FunkyLocomotion.pusher, 1, 0),
+                    "EEE",
+                    "CGC",
+                    "CTC",
+                    'E',
+                    nuggetEnderium,
+                    'G',
+                    gearEnderium,
+                    'C',
+                    ingotInvar,
+                    'T',
+                    diamond));
+            GameRegistry.addRecipe(
+                new ShapelessOreRecipe(
+                    new ItemStack(FunkyLocomotion.pusher, 1, 6),
+                    new ItemStack(FunkyLocomotion.pusher, 1, 0),
+                    "slimeball",
+                    "dustRedstone",
+                    "dustRedstone",
+                    "dustRedstone"));
+            GameRegistry.addRecipe(
+                new ShapelessOreRecipe(
+                    new ItemStack(FunkyLocomotion.slider, 1, 0),
+                    new ItemStack(FunkyLocomotion.pusher, 1, 0),
+                    nuggetSignalum,
+                    lapis,
+                    lapis,
+                    lapis));
+            GameRegistry.addRecipe(
+                new ShapedOreRecipe(
+                    new ItemStack(FunkyLocomotion.booster, 1, 0),
+                    "EEE",
+                    "CGC",
+                    "CTC",
+                    'E',
+                    ingotElectrum,
+                    'G',
+                    gearEnderium,
+                    'C',
+                    ingotInvar,
+                    'T',
+                    FunkyLocomotion.pusher));
 
-			addCustomRecipe(new ShapedOreRecipe(
-					ItemBlockTeleporter.assignNullID(new ItemStack(FunkyLocomotion.teleporter, 2)),
-					"EEE", "PNY", "EEE",
-					'E', nuggetEnderium,
-					'P', new ItemStack(FunkyLocomotion.pusher, 1, 0),
-					'N', Items.ender_pearl,
-					'Y', new ItemStack(FunkyLocomotion.pusher, 1, 6)
-			) {
-				@Override
-				public ItemStack getCraftingResult(InventoryCrafting var1) {
-					return ItemBlockTeleporter.assignRandomID(super.getCraftingResult(var1));
-				}
-			});
+            addCustomRecipe(
+                new ShapedOreRecipe(
+                    ItemBlockTeleporter.assignNullID(new ItemStack(FunkyLocomotion.teleporter, 2)),
+                    "EEE",
+                    "PNY",
+                    "EEE",
+                    'E',
+                    nuggetEnderium,
+                    'P',
+                    new ItemStack(FunkyLocomotion.pusher, 1, 0),
+                    'N',
+                    Items.ender_pearl,
+                    'Y',
+                    new ItemStack(FunkyLocomotion.pusher, 1, 6)) {
 
-			addCustomRecipe(new ShapelessOreRecipe(
-					ItemBlockTeleporter.assignNullID(new ItemStack(FunkyLocomotion.teleporter, 2)),
-					FunkyLocomotion.teleporter, FunkyLocomotion.teleporter
-			) {
-				@Override
-				public ItemStack getCraftingResult(InventoryCrafting var1) {
-					return ItemBlockTeleporter.assignRandomID(super.getCraftingResult(var1));
-				}
-			});
-		}
+                    @Override
+                    public ItemStack getCraftingResult(InventoryCrafting var1) {
+                        return ItemBlockTeleporter.assignRandomID(super.getCraftingResult(var1));
+                    }
+                });
 
-		if (shouldAddFrameCopyResetRecipes) {
-			ItemStack basicFrame = new ItemStack(FunkyLocomotion.frame[0], 1, 0);
-			ArrayList<ItemStack> list = new ArrayList<ItemStack>(64);
-			for (int i = 0; i < 4; i++) {
-				for (int j = 0; j < 16; j++) {
-					if (i != 0 || j != 0) {
-						ItemStack stack = new ItemStack(FunkyLocomotion.frame[i], 1, j);
-						list.add(stack);
+            addCustomRecipe(
+                new ShapelessOreRecipe(
+                    ItemBlockTeleporter.assignNullID(new ItemStack(FunkyLocomotion.teleporter, 2)),
+                    FunkyLocomotion.teleporter,
+                    FunkyLocomotion.teleporter) {
 
-						GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(FunkyLocomotion.frame[i], 2, j), stack, basicFrame));
+                    @Override
+                    public ItemStack getCraftingResult(InventoryCrafting var1) {
+                        return ItemBlockTeleporter.assignRandomID(super.getCraftingResult(var1));
+                    }
+                });
+        }
 
-					}
-				}
-			}
+        if (shouldAddFrameCopyResetRecipes) {
+            ItemStack basicFrame = new ItemStack(FunkyLocomotion.frame[0], 1, 0);
+            ArrayList<ItemStack> list = new ArrayList<ItemStack>(64);
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 16; j++) {
+                    if (i != 0 || j != 0) {
+                        ItemStack stack = new ItemStack(FunkyLocomotion.frame[i], 1, j);
+                        list.add(stack);
 
-			ShapelessOreRecipe t = new ShapelessOreRecipe(FunkyLocomotion.frame[0], new ItemStack(FunkyLocomotion.frame[0]));
-			t.getInput().clear();
-			t.getInput().add(list);
+                        GameRegistry.addRecipe(
+                            new ShapelessOreRecipe(new ItemStack(FunkyLocomotion.frame[i], 2, j), stack, basicFrame));
 
-			GameRegistry.addRecipe(t);
-		}
-	}
+                    }
+                }
+            }
 
-	public static Object getOreWithVanillaFallback(Object vanillaFallback, String... moddedOre) {
-		for (String modOre : moddedOre) {
-			if (OreDictionary.getOres(modOre).size() > 0)
-				return modOre;
-		}
-		return vanillaFallback;
-	}
+            ShapelessOreRecipe t = new ShapelessOreRecipe(
+                FunkyLocomotion.frame[0],
+                new ItemStack(FunkyLocomotion.frame[0]));
+            t.getInput()
+                .clear();
+            t.getInput()
+                .add(list);
 
-	public static void addCustomRecipe(IRecipe recipe){
-		GameRegistry.addRecipe(recipe);
-		RecipeSorter.register("funky:recipe", recipe.getClass(), SHAPELESS, "");
-	}
+            GameRegistry.addRecipe(t);
+        }
+    }
+
+    public static Object getOreWithVanillaFallback(Object vanillaFallback, String... moddedOre) {
+        for (String modOre : moddedOre) {
+            if (OreDictionary.getOres(modOre)
+                .size() > 0) return modOre;
+        }
+        return vanillaFallback;
+    }
+
+    public static void addCustomRecipe(IRecipe recipe) {
+        GameRegistry.addRecipe(recipe);
+        RecipeSorter.register("funky:recipe", recipe.getClass(), SHAPELESS, "");
+    }
 }

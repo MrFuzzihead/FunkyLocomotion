@@ -1,18 +1,20 @@
 package com.rwtema.funkylocomotion;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent;
-import cpw.mods.fml.relauncher.Side;
+import java.util.List;
+import java.util.WeakHashMap;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
 
-import java.util.List;
-import java.util.WeakHashMap;
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.relauncher.Side;
 
 public class EntityMovingEventHandler {
+
     public static final WeakHashMap<Entity, Vec3> client = new WeakHashMap<Entity, Vec3>();
     public static final WeakHashMap<Entity, Vec3> server = new WeakHashMap<Entity, Vec3>();
 
@@ -21,7 +23,9 @@ public class EntityMovingEventHandler {
     }
 
     public static void init() {
-        FMLCommonHandler.instance().bus().register(new EntityMovingEventHandler());
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new EntityMovingEventHandler());
     }
 
     public static WeakHashMap<Entity, Vec3> getMovementMap(Side side) {
@@ -39,7 +43,6 @@ public class EntityMovingEventHandler {
 
         double kx, ky, kz;
 
-
         if (entity.noClip) {
             entity.boundingBox.offset(dx, dy, dz);
             entity.posX = (entity.boundingBox.minX + entity.boundingBox.maxX) / 2.0D;
@@ -55,11 +58,13 @@ public class EntityMovingEventHandler {
             AxisAlignedBB bb = entity.boundingBox.copy();
             boolean flag = entity.onGround && entity.isSneaking() && entity instanceof EntityPlayer;
 
-            //make sure player do not fall off if sneaking
+            // make sure player do not fall off if sneaking
             if (flag) {
                 double d9;
 
-                for (d9 = 0.05D; dx != 0.0D && entity.worldObj.getCollidingBoundingBoxes(entity, entity.boundingBox.getOffsetBoundingBox(dx, -1.0D, 0.0D)).isEmpty(); dx_original = dx) {
+                for (d9 = 0.05D; dx != 0.0D && entity.worldObj
+                    .getCollidingBoundingBoxes(entity, entity.boundingBox.getOffsetBoundingBox(dx, -1.0D, 0.0D))
+                    .isEmpty(); dx_original = dx) {
                     if (dx < d9 && dx >= -d9) {
                         dx = 0.0D;
                     } else if (dx > 0.0D) {
@@ -69,7 +74,9 @@ public class EntityMovingEventHandler {
                     }
                 }
 
-                for (; dz != 0.0D && entity.worldObj.getCollidingBoundingBoxes(entity, entity.boundingBox.getOffsetBoundingBox(0.0D, -1.0D, dz)).isEmpty(); dz_original = dz) {
+                for (; dz != 0.0D && entity.worldObj
+                    .getCollidingBoundingBoxes(entity, entity.boundingBox.getOffsetBoundingBox(0.0D, -1.0D, dz))
+                    .isEmpty(); dz_original = dz) {
                     if (dz < d9 && dz >= -d9) {
                         dz = 0.0D;
                     } else if (dz > 0.0D) {
@@ -79,7 +86,10 @@ public class EntityMovingEventHandler {
                     }
                 }
 
-                while (dx != 0.0D && dz != 0.0D && entity.worldObj.getCollidingBoundingBoxes(entity, entity.boundingBox.getOffsetBoundingBox(dx, -1.0D, dz)).isEmpty()) {
+                while (dx != 0.0D && dz != 0.0D
+                    && entity.worldObj
+                        .getCollidingBoundingBoxes(entity, entity.boundingBox.getOffsetBoundingBox(dx, -1.0D, dz))
+                        .isEmpty()) {
                     if (dx < d9 && dx >= -d9) {
                         dx = 0.0D;
                     } else if (dx > 0.0D) {
@@ -142,11 +152,11 @@ public class EntityMovingEventHandler {
                 dx = 0.0D;
             }
 
-
             int k;
 
-
-            if (entity.stepHeight > 0.0F && flag1 && (flag || entity.ySize < 0.05F) && (dx_original != dx || dz_original != dz)) {
+            if (entity.stepHeight > 0.0F && flag1
+                && (flag || entity.ySize < 0.05F)
+                && (dx_original != dx || dz_original != dz)) {
                 kz = dx;
                 kx = dy;
                 ky = dz;
@@ -155,7 +165,8 @@ public class EntityMovingEventHandler {
                 dz = dz_original;
                 AxisAlignedBB axisalignedbb1 = entity.boundingBox.copy();
                 entity.boundingBox.setBB(bb);
-                list = entity.worldObj.getCollidingBoundingBoxes(entity, entity.boundingBox.addCoord(dx_original, dy, dz_original));
+                list = entity.worldObj
+                    .getCollidingBoundingBoxes(entity, entity.boundingBox.addCoord(dx_original, dy, dz_original));
 
                 for (k = 0; k < list.size(); ++k) {
                     dy = ((AxisAlignedBB) list.get(k)).calculateYOffset(entity.boundingBox, dy);
@@ -231,7 +242,6 @@ public class EntityMovingEventHandler {
         entity.prevPosX += kx;
         entity.prevPosY += ky;
         entity.prevPosZ += kz;
-
 
     }
 

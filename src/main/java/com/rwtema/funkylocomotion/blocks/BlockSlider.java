@@ -1,7 +1,7 @@
 package com.rwtema.funkylocomotion.blocks;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-import com.rwtema.funkylocomotion.helper.ItemHelper;
+import java.util.List;
+
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -14,9 +14,11 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import java.util.List;
+import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.helper.ItemHelper;
 
 public class BlockSlider extends BlockPusher {
+
     public static IIcon iconSlider0;
     public static IIcon iconSlider1;
     public static IIcon iconSlider;
@@ -46,8 +48,8 @@ public class BlockSlider extends BlockPusher {
 
     @Override
     public boolean shouldSideBeRendered(IBlockAccess world, int x, int y, int z, int side) {
-        return renderSide != 6 && (renderSide == -1 || (side == renderSide || side == Facing.oppositeSide[renderSide])) &&
-                super.shouldSideBeRendered(world, x, y, z, side);
+        return renderSide != 6 && (renderSide == -1 || (side == renderSide || side == Facing.oppositeSide[renderSide]))
+            && super.shouldSideBeRendered(world, x, y, z, side);
     }
 
     @Override
@@ -56,14 +58,12 @@ public class BlockSlider extends BlockPusher {
         if (tile != null && tile.getClass() == TileSlider.class) {
             ForgeDirection slideDir = ((TileSlider) tile).getSlideDir();
 
-            if (slideDir.ordinal() == side)
-                return iconSliderPush;
-            else if (slideDir.getOpposite().ordinal() == side)
-                return iconSlider;
+            if (slideDir.ordinal() == side) return iconSliderPush;
+            else if (slideDir.getOpposite()
+                .ordinal() == side) return iconSlider;
         }
 
         return super.getIcon(world, x, y, z, side);
-
 
     }
 
@@ -74,11 +74,11 @@ public class BlockSlider extends BlockPusher {
     }
 
     @Override
-    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
+    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+        float hitY, float hitZ) {
         if (!world.isRemote) {
             ItemStack item = player.getHeldItem();
-            if (!(ItemHelper.isWrench(item)))
-                return false;
+            if (!(ItemHelper.isWrench(item))) return false;
 
             final int meta = world.getBlockMetadata(x, y, z);
             TileEntity tile = world.getTileEntity(x, y, z);
@@ -89,8 +89,7 @@ public class BlockSlider extends BlockPusher {
                 }
             } else {
 
-                if (side == meta)
-                    side = Facing.oppositeSide[side];
+                if (side == meta) side = Facing.oppositeSide[side];
 
                 world.setBlockMetadataWithNotify(x, y, z, (meta < 6 ? 0 : 6) + side, 3);
 
@@ -99,7 +98,6 @@ public class BlockSlider extends BlockPusher {
                     world.markBlockForUpdate(x, y, z);
                 }
             }
-
 
         }
         return true;
@@ -111,7 +109,6 @@ public class BlockSlider extends BlockPusher {
         return (side == dir) ? iconSliderFront : ((side == Facing.oppositeSide[dir]) ? blockIcon : iconSlider0);
     }
 
-
     @Override
     public int getRenderType() {
         return FunkyLocomotion.proxy.sliderRendererId;
@@ -121,6 +118,5 @@ public class BlockSlider extends BlockPusher {
     public TileEntity createTileEntity(World world, int metadata) {
         return new TileSlider();
     }
-
 
 }

@@ -1,9 +1,5 @@
 package com.rwtema.funkylocomotion.helper;
 
-import com.rwtema.funkylocomotion.movepermissions.MoveCheckReflector;
-import framesapi.BlockPos;
-import framesapi.IMoveCheck;
-import framesapi.ISlipperyBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
@@ -14,7 +10,14 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.movepermissions.MoveCheckReflector;
+
+import framesapi.BlockPos;
+import framesapi.IMoveCheck;
+import framesapi.ISlipperyBlock;
+
 public class BlockHelper {
+
     public static boolean silentSetBlock(Chunk chunk, BlockPos pos, Block block, int meta) {
         int dx = pos.x & 15;
         int dz = pos.z & 15;
@@ -39,7 +42,9 @@ public class BlockHelper {
                     return false;
                 }
 
-                extendedblockstorage = chunk.getBlockStorageArray()[y >> 4] = new ExtendedBlockStorage(y >> 4 << 4, !chunk.worldObj.provider.hasNoSky);
+                extendedblockstorage = chunk.getBlockStorageArray()[y >> 4] = new ExtendedBlockStorage(
+                    y >> 4 << 4,
+                    !chunk.worldObj.provider.hasNoSky);
             }
 
             extendedblockstorage.func_150818_a(dx, y & 15, dz, block);
@@ -58,7 +63,6 @@ public class BlockHelper {
     public static void postUpdateBlock(World world, BlockPos pos) {
         int i1 = (pos.z & 15) << 4 | (pos.x & 15);
 
-
         Chunk chunk = getChunk(world, pos);
 
         if (pos.y >= chunk.precipitationHeightMap[i1] - 1) {
@@ -69,7 +73,6 @@ public class BlockHelper {
         boolean flag = pos.y >= j1;
         Block newBlock = chunk.getBlock(pos.x & 15, pos.y, pos.z & 15);
         int k2 = 255;
-
 
         if (flag) {
             chunk.generateSkylightMap();
@@ -85,7 +88,8 @@ public class BlockHelper {
                 chunk.relightBlock(pos.x & 15, pos.y, pos.z & 15);
             }
 
-            if (j2 != k2 && (j2 < k2 || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0 || chunk.getSavedLightValue(EnumSkyBlock.Block, pos.x & 15, pos.y, pos.z & 15) > 0)) {
+            if (j2 != k2 && (j2 < k2 || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0
+                || chunk.getSavedLightValue(EnumSkyBlock.Block, pos.x & 15, pos.y, pos.z & 15) > 0)) {
                 chunk.propagateSkylightOcclusion(pos.x & 15, pos.z & 15);
             }
         }
@@ -116,22 +120,17 @@ public class BlockHelper {
 
     public static boolean canMoveBlock(World world, BlockPos pos) {
         Block b = getBlock(world, pos);
-        if (b == Blocks.air || b.isAir(world, pos.x, pos.y, pos.z))
-            return false;
+        if (b == Blocks.air || b.isAir(world, pos.x, pos.y, pos.z)) return false;
 
-        if (b instanceof IMoveCheck)
-            return ((IMoveCheck) b).canMove(world, pos.x, pos.y, pos.z);
+        if (b instanceof IMoveCheck) return ((IMoveCheck) b).canMove(world, pos.x, pos.y, pos.z);
 
-        if (b.getBlockHardness(world, pos.x, pos.y, pos.z) < 0)
-            return false;
+        if (b.getBlockHardness(world, pos.x, pos.y, pos.z) < 0) return false;
 
         TileEntity tile = world.getTileEntity(pos.x, pos.y, pos.z);
 
         if (tile != null) {
-            if (tile instanceof IMoveCheck)
-                return ((IMoveCheck) tile).canMove(world, pos.x, pos.y, pos.z);
-            else if (!MoveCheckReflector.canMoveClass(tile.getClass()))
-                return false;
+            if (tile instanceof IMoveCheck) return ((IMoveCheck) tile).canMove(world, pos.x, pos.y, pos.z);
+            else if (!MoveCheckReflector.canMoveClass(tile.getClass())) return false;
         }
 
         return MoveCheckReflector.canMoveClass(b.getClass());
@@ -154,18 +153,17 @@ public class BlockHelper {
     }
 
     public static boolean canStick(World world, BlockPos pos, ForgeDirection dir) {
-        if (!isValid(world, pos))
-            return false;
+        if (!isValid(world, pos)) return false;
 
-        if (!canMoveBlock(world, pos))
-            return false;
+        if (!canMoveBlock(world, pos)) return false;
 
         Block b = getBlock(world, pos);
         return !(b instanceof ISlipperyBlock) || ((ISlipperyBlock) b).canStickTo(world, pos, dir);
     }
 
     public static boolean canReplace(World world, BlockPos pos) {
-        return isValid(world, pos) && (world.isAirBlock(pos.x, pos.y, pos.z) || getBlock(world, pos).isReplaceable(world, pos.x, pos.y, pos.z));
+        return isValid(world, pos) && (world.isAirBlock(pos.x, pos.y, pos.z)
+            || getBlock(world, pos).isReplaceable(world, pos.x, pos.y, pos.z));
 
     }
 
@@ -173,7 +171,7 @@ public class BlockHelper {
         return world.getTileEntity(pos.x, pos.y, pos.z);
     }
 
-	public static int getMeta(World world, BlockPos pos) {
-		return world.getBlockMetadata(pos.x, pos.y, pos.z);
-	}
+    public static int getMeta(World world, BlockPos pos) {
+        return world.getBlockMetadata(pos.x, pos.y, pos.z);
+    }
 }

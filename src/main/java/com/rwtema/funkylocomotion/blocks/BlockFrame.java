@@ -1,13 +1,15 @@
 package com.rwtema.funkylocomotion.blocks;
 
-import framesapi.IStickyBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import framesapi.IStickyBlock;
+
 public class BlockFrame extends Block implements IStickyBlock {
+
     public BlockFrame() {
         super(Material.rock);
         this.setBlockName("funkylocomotion:frame");
