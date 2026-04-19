@@ -52,8 +52,6 @@ public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
                 break;
 
             case 1:
-            default:
-                break;
 
             case 2:
                 renderer.uvRotateNorth = 2;
@@ -78,6 +76,9 @@ public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
                 renderer.uvRotateBottom = 2;
                 renderer.uvRotateEast = 2;
                 renderer.uvRotateWest = 1;
+                break;
+
+            default:
                 break;
         }
     }

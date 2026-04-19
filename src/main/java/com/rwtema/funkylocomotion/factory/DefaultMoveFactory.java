@@ -8,10 +8,9 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IMoveFactory;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
-
-import framesapi.BlockPos;
-import framesapi.IMoveFactory;
 
 public class DefaultMoveFactory implements IMoveFactory {
 

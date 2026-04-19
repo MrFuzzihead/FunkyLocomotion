@@ -7,7 +7,17 @@ import net.minecraft.item.Item;
 import net.minecraftforge.common.config.Configuration;
 
 import com.rwtema.funkylocomotion.asm.WrenchFactory;
-import com.rwtema.funkylocomotion.blocks.*;
+import com.rwtema.funkylocomotion.blocks.BlockBooster;
+import com.rwtema.funkylocomotion.blocks.BlockMoving;
+import com.rwtema.funkylocomotion.blocks.BlockPusher;
+import com.rwtema.funkylocomotion.blocks.BlockSlider;
+import com.rwtema.funkylocomotion.blocks.BlockStickyFrame;
+import com.rwtema.funkylocomotion.blocks.BlockTeleport;
+import com.rwtema.funkylocomotion.blocks.TileBooster;
+import com.rwtema.funkylocomotion.blocks.TileMovingServer;
+import com.rwtema.funkylocomotion.blocks.TilePusher;
+import com.rwtema.funkylocomotion.blocks.TileSlider;
+import com.rwtema.funkylocomotion.blocks.TileTeleport;
 import com.rwtema.funkylocomotion.dispenser.FrameDispenserAcion;
 import com.rwtema.funkylocomotion.dispenser.WrenchDispenserAction;
 import com.rwtema.funkylocomotion.factory.FactoryRegistry;
@@ -57,7 +67,7 @@ public class FunkyLocomotion {
     public static boolean redrawChunksInstantly;
 
     @EventHandler
-    public void preinit(FMLPreInitializationEvent event) {
+    public void preInit(FMLPreInitializationEvent event) {
         LogHelper.info("Let's Move!");
         FLNetwork.init();
 

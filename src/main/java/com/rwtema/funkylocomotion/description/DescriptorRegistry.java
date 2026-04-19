@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import framesapi.IDescriptionProxy;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 
 public class DescriptorRegistry {
 

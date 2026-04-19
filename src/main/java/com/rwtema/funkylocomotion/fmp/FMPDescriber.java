@@ -10,13 +10,14 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
+
 import codechicken.lib.data.MCDataOutputWrapper;
 import codechicken.lib.packet.PacketCustom;
 import codechicken.multipart.MultiPartRegistry;
 import codechicken.multipart.TMultiPart;
 import codechicken.multipart.TileMultipart;
-import framesapi.BlockPos;
-import framesapi.IDescriptionProxy;
 import io.netty.buffer.Unpooled;
 
 public class FMPDescriber implements IDescriptionProxy {
@@ -57,8 +58,6 @@ public class FMPDescriber implements IDescriptionProxy {
             part.readDesc(packet);
             parts.add(part);
         }
-
-        if (parts.size() == 0) return block.createTileEntity(world, meta);
 
         return block.createTileEntity(world, meta);
     }

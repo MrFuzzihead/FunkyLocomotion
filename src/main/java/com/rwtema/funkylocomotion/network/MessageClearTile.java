@@ -10,6 +10,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 
@@ -18,7 +19,6 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
 import io.netty.buffer.ByteBuf;
 
 public class MessageClearTile implements IMessage {

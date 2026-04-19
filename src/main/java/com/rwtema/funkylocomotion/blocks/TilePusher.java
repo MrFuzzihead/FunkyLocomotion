@@ -12,6 +12,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IStickyBlock;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.movers.IMover;
 import com.rwtema.funkylocomotion.movers.MoveManager;
@@ -20,8 +22,6 @@ import com.rwtema.funkylocomotion.proxydelegates.ProxyRegistry;
 
 import cofh.api.energy.EnergyStorage;
 import cofh.api.energy.IEnergyReceiver;
-import framesapi.BlockPos;
-import framesapi.IStickyBlock;
 
 public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 

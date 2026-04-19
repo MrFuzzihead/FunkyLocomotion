@@ -9,9 +9,8 @@ import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
-
-import framesapi.BlockPos;
 
 public class TileSlider extends TilePusher {
 

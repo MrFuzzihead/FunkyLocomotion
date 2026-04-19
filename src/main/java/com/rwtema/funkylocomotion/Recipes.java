@@ -190,8 +190,8 @@ public class Recipes {
 
     public static Object getOreWithVanillaFallback(Object vanillaFallback, String... moddedOre) {
         for (String modOre : moddedOre) {
-            if (OreDictionary.getOres(modOre)
-                .size() > 0) return modOre;
+            if (!OreDictionary.getOres(modOre)
+                .isEmpty()) return modOre;
         }
         return vanillaFallback;
     }

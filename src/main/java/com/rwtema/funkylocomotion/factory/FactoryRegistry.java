@@ -7,10 +7,9 @@ import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IMoveFactory;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
-
-import framesapi.BlockPos;
-import framesapi.IMoveFactory;
 
 public class FactoryRegistry {
 

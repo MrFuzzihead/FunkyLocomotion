@@ -47,16 +47,16 @@ public class ItemBlockFrame extends ItemBlockMetadata {
         super.addInformation(item, player, list, debug);
         if (index == 0 && item.getItemDamage() == 0) return;
         list.add(StatCollector.translateToLocal("frame.dir.start"));
-        String s = "";
+        StringBuilder s = new StringBuilder();
         boolean flag = false;
         for (int i = 0; i < 6; i++) {
             if (((index + item.getItemDamage()) & (1 << i)) != 0) {
-                if (flag) s = s + ", ";
-                s = s + StatCollector.translateToLocal("frame.dir.name." + i);
+                if (flag) s.append(", ");
+                s.append(StatCollector.translateToLocal("frame.dir.name." + i));
                 flag = true;
             }
         }
 
-        list.addAll(Minecraft.getMinecraft().fontRenderer.listFormattedStringToWidth(s, 60));
+        list.addAll(Minecraft.getMinecraft().fontRenderer.listFormattedStringToWidth(s.toString(), 60));
     }
 }

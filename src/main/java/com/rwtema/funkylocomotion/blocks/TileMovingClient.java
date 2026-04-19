@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import net.minecraft.block.Block;
+import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.shader.TesselatorVertexState;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,6 +16,8 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
@@ -22,8 +25,6 @@ import com.rwtema.funkylocomotion.rendering.ChunkRerenderer;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
-import framesapi.IDescriptionProxy;
 
 public class TileMovingClient extends TileMovingBase {
 
@@ -112,6 +113,14 @@ public class TileMovingClient extends TileMovingBase {
         }
 
         if (checkClass(this.block) || checkClass(this.tile)) this.tile = null;
+
+        // Pre-register the tile entity's special renderer outside the render loop to prevent
+        // a ConcurrentModificationException caused by lazy class-hierarchy caching in
+        // TileEntityRendererDispatcher.getSpecialRenderer modifying its mapSpecialRenderers
+        // HashMap while it is being iterated during the normal tile entity render pass.
+        if (this.tile != null) {
+            TileEntityRendererDispatcher.instance.getSpecialRenderer(this.tile);
+        }
 
         if (render && !init) ChunkRerenderer.markBlock(xCoord, yCoord, zCoord);
 

@@ -9,13 +9,13 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.items.ItemWrench;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.network.MessageObstruction;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
 
 public class ObstructionHelper {
 

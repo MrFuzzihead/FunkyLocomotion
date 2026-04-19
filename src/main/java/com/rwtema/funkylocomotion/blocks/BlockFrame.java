@@ -6,7 +6,7 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import framesapi.IStickyBlock;
+import com.rwtema.funkylocomotion.api.IStickyBlock;
 
 public class BlockFrame extends Block implements IStickyBlock {
 

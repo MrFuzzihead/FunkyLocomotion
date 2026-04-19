@@ -4,11 +4,11 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.chunk.Chunk;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.factory.DefaultMoveFactory;
 
 import codechicken.multipart.MultipartHelper;
 import codechicken.multipart.TileMultipart;
-import framesapi.BlockPos;
 
 public class FMPMover extends DefaultMoveFactory {
 

@@ -1,4 +1,4 @@
-package framesapi;
+package com.rwtema.funkylocomotion.api;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
@@ -11,14 +11,14 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public interface IDescriptionProxy {
 
-    public String getID();
+    String getID();
 
-    public boolean canHandleTile(TileEntity tile);
+    boolean canHandleTile(TileEntity tile);
 
-    public void addDescriptionToTags(NBTTagCompound descriptor, TileEntity tile);
+    void addDescriptionToTags(NBTTagCompound descriptor, TileEntity tile);
 
     @SideOnly(Side.CLIENT)
-    public TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos,
+    TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos,
         World world);
 
 }

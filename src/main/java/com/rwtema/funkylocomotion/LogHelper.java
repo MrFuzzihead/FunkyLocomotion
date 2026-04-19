@@ -25,16 +25,18 @@ public class LogHelper {
 
     public static void debug(Object info, Object... info2) {
         if (isDeObf) {
-            String temp = "Debug: " + info;
-            for (Object t : info2) temp = temp + " " + t;
+            StringBuilder temp = new StringBuilder("Debug: " + info);
+            for (Object t : info2) temp.append(" ")
+                .append(t);
 
             logger.info(info);
         }
     }
 
     public static void info(Object info, Object... info2) {
-        String temp = "" + info;
-        for (Object t : info2) temp = temp + " " + t;
+        StringBuilder temp = new StringBuilder("" + info);
+        for (Object t : info2) temp.append(" ")
+            .append(t);
 
         logger.info(info);
     }
@@ -44,8 +46,9 @@ public class LogHelper {
     }
 
     public static void error(Object info, Object... info2) {
-        String temp = "" + info;
-        for (Object t : info2) temp = temp + " " + t;
+        StringBuilder temp = new StringBuilder("" + info);
+        for (Object t : info2) temp.append(" ")
+            .append(t);
 
         logger.error(info);
     }

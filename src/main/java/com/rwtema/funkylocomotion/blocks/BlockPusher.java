@@ -17,11 +17,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.ISlipperyBlock;
 import com.rwtema.funkylocomotion.helper.ItemHelper;
 import com.rwtema.funkylocomotion.movers.MoverEventHandler;
-
-import framesapi.BlockPos;
-import framesapi.ISlipperyBlock;
 
 public class BlockPusher extends Block implements ISlipperyBlock {
 

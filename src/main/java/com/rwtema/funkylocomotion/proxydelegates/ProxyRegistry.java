@@ -13,11 +13,7 @@ public class ProxyRegistry {
 
         if (iface.isAssignableFrom(a.getClass())) return iface.cast(a);
 
-        HashMap<Object, Object> h = proxies.get(iface);
-        if (h == null) {
-            h = new HashMap<Object, Object>();
-            proxies.put(iface, h);
-        }
+        HashMap<Object, Object> h = proxies.computeIfAbsent(iface, k -> new HashMap<Object, Object>());
 
         h.put(a, iface.cast(proxy));
 

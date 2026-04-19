@@ -9,8 +9,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.world.World;
 
-import framesapi.BlockPos;
-import framesapi.IDescriptionProxy;
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 
 public class DescribeVanillaSign extends DescribeVanilla implements IDescriptionProxy {
 

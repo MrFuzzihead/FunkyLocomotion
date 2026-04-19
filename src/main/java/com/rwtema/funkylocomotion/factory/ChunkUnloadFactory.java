@@ -5,7 +5,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.chunk.Chunk;
 
-import framesapi.BlockPos;
+import com.rwtema.funkylocomotion.api.BlockPos;
 
 public class ChunkUnloadFactory extends DefaultMoveFactory {
 

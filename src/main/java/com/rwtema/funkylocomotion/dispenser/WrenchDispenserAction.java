@@ -9,10 +9,9 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
-
-import framesapi.BlockPos;
 
 public class WrenchDispenserAction extends BehaviorDefaultDispenseItem {
 

@@ -6,12 +6,12 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
-import framesapi.IDescriptionProxy;
 
 public abstract class DescribeBase implements IDescriptionProxy {
 

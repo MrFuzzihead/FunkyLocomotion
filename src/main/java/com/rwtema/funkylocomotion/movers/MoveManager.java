@@ -29,6 +29,9 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
+import com.rwtema.funkylocomotion.api.IMoveFactory;
 import com.rwtema.funkylocomotion.blocks.BlockMoving;
 import com.rwtema.funkylocomotion.blocks.TileMovingServer;
 import com.rwtema.funkylocomotion.description.DescriptorRegistry;
@@ -36,10 +39,6 @@ import com.rwtema.funkylocomotion.factory.FactoryRegistry;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.network.MessageClearTile;
-
-import framesapi.BlockPos;
-import framesapi.IDescriptionProxy;
-import framesapi.IMoveFactory;
 
 public class MoveManager {
 
@@ -150,7 +149,7 @@ public class MoveManager {
                     axes,
                     null);
 
-                if (axes.size() > 0) {
+                if (!axes.isEmpty()) {
                     e.bb = new ArrayList<AxisAlignedBB>();
                     for (AxisAlignedBB bb : axes) {
                         e.bb.add(
@@ -175,7 +174,7 @@ public class MoveManager {
                     for (IDescriptionProxy d : DescriptorRegistry.getProxyList()) {
                         if (d.canHandleTile(tile)) {
                             d.addDescriptionToTags(descriptor, tile);
-                            if (!"".equals("DescID")) descriptor.setString("DescID", d.getID());
+                            if (!"DescID".isEmpty()) descriptor.setString("DescID", d.getID());
                             flag = true;
                             break;
                         }
@@ -291,7 +290,7 @@ public class MoveManager {
 
                 tile.scheduledTickTime = e.scheduledTickTime;
                 tile.scheduledTickPriority = e.scheduledTickPriority;
-                if (e.bb != null) tile.collisions = e.bb.toArray(new AxisAlignedBB[e.bb.size()]);
+                if (e.bb != null) tile.collisions = e.bb.toArray(new AxisAlignedBB[0]);
 
                 tile.isAir = false;
 
@@ -317,7 +316,6 @@ public class MoveManager {
 
                         tile.lightLevel = 0;
                         tile.lightOpacity = 0;
-                        tile.isAir = true;
                     } else {
                         FLNetwork.sendToAllWatchingChunk(
                             srcWorld,
@@ -335,10 +333,10 @@ public class MoveManager {
                         tile.lightLevel = e.lightlevel;
                         tile.lightOpacity = e.lightopacity;
 
-                        if (e.bb != null) tile.collisions = e.bb.toArray(new AxisAlignedBB[e.bb.size()]);
+                        if (e.bb != null) tile.collisions = e.bb.toArray(new AxisAlignedBB[0]);
 
-                        tile.isAir = true;
                     }
+                    tile.isAir = true;
 
                     tiles.add(tile);
                 }
@@ -480,7 +478,7 @@ public class MoveManager {
             }
             vars.put("chunk", BLANK);
 
-            // Redocached Activation
+            // Redo cached Activation
             section = "Redo Activation";
             for (TileMovingServer tile : tiles) {
                 vars.put("tile", tile);
@@ -529,16 +527,16 @@ public class MoveManager {
             String nameForObject = "" + Block.blockRegistry.getNameForObject(o);
             builder.append(nameForObject);
             builder.append(",");
-            builder.append(o.toString());
+            builder.append(o);
         } else if (o instanceof TileEntity) {
             try {
                 builder.append("tag=");
                 NBTTagCompound tag = new NBTTagCompound();
                 ((TileEntity) o).writeToNBT(tag);
-                builder.append(tag.toString());
+                builder.append(tag);
             } catch (Exception err) {
                 builder.append("TE WriteToNBT Crash\n");
-                builder.append(err.toString());
+                builder.append(err);
             }
         } else if (o instanceof Collection) {
             int i = 0;
@@ -555,7 +553,7 @@ public class MoveManager {
                 tabs(n, builder);
             }
         } else {
-            builder.append(o.toString());
+            builder.append(o);
         }
         builder.append("}");
         return builder.toString();
@@ -628,9 +626,7 @@ public class MoveManager {
             BlockLink blockLink = (BlockLink) o;
 
             if (!dstPos.equals(blockLink.dstPos)) return false;
-            if (!srcPos.equals(blockLink.srcPos)) return false;
-
-            return true;
+            return srcPos.equals(blockLink.srcPos);
         }
 
         @Override

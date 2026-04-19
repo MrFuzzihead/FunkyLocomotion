@@ -4,10 +4,10 @@ import net.minecraft.block.Block;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.api.IStickyBlock;
 import com.rwtema.funkylocomotion.blocks.BlockStickyFrame;
 
 import cofh.api.block.IBlockAppearance;
-import framesapi.IStickyBlock;
 
 public class COFHStickiness implements IStickyBlock {
 

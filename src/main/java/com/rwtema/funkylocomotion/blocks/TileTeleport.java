@@ -15,6 +15,7 @@ import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.helper.WeakSet;
 import com.rwtema.funkylocomotion.movers.MoveManager;
@@ -22,7 +23,6 @@ import com.rwtema.funkylocomotion.particles.ObstructionHelper;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
 import gnu.trove.map.hash.TLongObjectHashMap;
 
 public class TileTeleport extends TilePusher {

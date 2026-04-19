@@ -3,6 +3,7 @@ package com.rwtema.funkylocomotion.network;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.particles.ParticleObstruction;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -10,7 +11,6 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
 import io.netty.buffer.ByteBuf;
 
 public class MessageObstruction implements IMessage {

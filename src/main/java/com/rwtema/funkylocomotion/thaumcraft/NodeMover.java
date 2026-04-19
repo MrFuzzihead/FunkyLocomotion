@@ -4,9 +4,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.chunk.Chunk;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.factory.DefaultMoveFactory;
 
-import framesapi.BlockPos;
 import thaumcraft.api.nodes.INode;
 import thaumcraft.api.nodes.NodeModifier;
 

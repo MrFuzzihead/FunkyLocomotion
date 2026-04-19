@@ -17,7 +17,6 @@ public class DebugEventHandler {
 
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
-    @SuppressWarnings("unchecked")
     public void renderTiles(TickEvent.WorldTickEvent event) {
         WorldClient clientWorld = Minecraft.getMinecraft().theWorld;
 

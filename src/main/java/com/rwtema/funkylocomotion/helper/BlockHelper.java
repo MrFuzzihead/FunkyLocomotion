@@ -10,11 +10,10 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IMoveCheck;
+import com.rwtema.funkylocomotion.api.ISlipperyBlock;
 import com.rwtema.funkylocomotion.movepermissions.MoveCheckReflector;
-
-import framesapi.BlockPos;
-import framesapi.IMoveCheck;
-import framesapi.ISlipperyBlock;
 
 public class BlockHelper {
 

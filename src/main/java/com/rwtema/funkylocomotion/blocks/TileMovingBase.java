@@ -131,7 +131,6 @@ public abstract class TileMovingBase extends TileEntity {
             Facing.offsetsZForSide[dir] * d);
     }
 
-    @SuppressWarnings("unchecked")
     public void updateEntity() {
         if (maxTime == 0) return;
 
@@ -147,9 +146,7 @@ public abstract class TileMovingBase extends TileEntity {
 
         for (AxisAlignedBB bb : getTransformedColisions()) {
             List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, bb.expand(0, 0.1, 0));
-            for (Entity entity : entities) {
-                entityList.add(entity);
-            }
+            entityList.addAll(entities);
         }
 
         for (Entity a : entityList) {

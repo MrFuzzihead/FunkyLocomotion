@@ -5,6 +5,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.IStickyBlock;
 import com.rwtema.funkylocomotion.proxydelegates.ProxyRegistry;
 
 import codechicken.lib.vec.BlockCoord;
@@ -13,7 +14,6 @@ import codechicken.microblock.MicroMaterialRegistry;
 import codechicken.microblock.Microblock;
 import codechicken.multipart.TMultiPart;
 import codechicken.multipart.TileMultipart;
-import framesapi.IStickyBlock;
 
 public class FMPStickness implements IStickyBlock {
 
