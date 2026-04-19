@@ -1,8 +1,9 @@
-package framesapi;
+package com.rwtema.funkylocomotion.api;
 
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public interface ISlipperyBlock {
-    public boolean canStickTo(World world, BlockPos pos, ForgeDirection dir);
+
+    boolean canStickTo(World world, BlockPos pos, ForgeDirection dir);
 }

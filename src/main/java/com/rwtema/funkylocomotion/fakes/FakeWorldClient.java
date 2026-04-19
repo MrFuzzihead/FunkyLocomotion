@@ -1,9 +1,7 @@
 package com.rwtema.funkylocomotion.fakes;
 
-import com.rwtema.funkylocomotion.blocks.TileMovingClient;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import java.util.HashMap;
+
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -27,25 +25,35 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.WorldEvent;
 
-import java.util.HashMap;
+import com.rwtema.funkylocomotion.blocks.TileMovingClient;
+
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public class FakeWorldClient extends WorldClient {
+
     private static final HashMap<World, FakeWorldClient> cache = new HashMap<World, FakeWorldClient>();
     public double offset = 0;
     public ForgeDirection dir = ForgeDirection.UNKNOWN;
     final World world;
     final WorldClient worldClient;
 
-
     private FakeWorldClient(World world) {
-        super(new NetHandlerPlayClient(Minecraft.getMinecraft(), null, new NetworkManager(true)), new WorldSettings(world.getWorldInfo()), world.provider.dimensionId, world.difficultySetting, world.theProfiler);
+        super(
+            new NetHandlerPlayClient(Minecraft.getMinecraft(), null, new NetworkManager(true)),
+            new WorldSettings(world.getWorldInfo()),
+            world.provider.dimensionId,
+            world.difficultySetting,
+            world.theProfiler);
         this.world = world;
         this.worldClient = world instanceof WorldClient ? ((WorldClient) world) : null;
     }
 
     public static boolean isValid(World world) {
-        return world != null && world.provider != null && DimensionManager.isDimensionRegistered(world.provider.dimensionId);
+        return world != null && world.provider != null
+            && DimensionManager.isDimensionRegistered(world.provider.dimensionId);
     }
 
     public static FakeWorldClient getFakeWorldWrapper(World world) {
@@ -101,8 +109,7 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public Block getBlock(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        if (tile != null)
-            return tile.block;
+        if (tile != null) return tile.block;
 
         return Blocks.air;
     }
@@ -177,7 +184,8 @@ public class FakeWorldClient extends WorldClient {
 
     @Override
     public void spawnParticle(String type, double x, double y, double z, double r, double g, double b) {
-        world.spawnParticle(type, x + offset * dir.offsetX, y + offset * dir.offsetY, z + offset * dir.offsetZ, r, g, b);
+        world
+            .spawnParticle(type, x + offset * dir.offsetX, y + offset * dir.offsetY, z + offset * dir.offsetZ, r, g, b);
     }
 
     @Override
@@ -199,8 +207,7 @@ public class FakeWorldClient extends WorldClient {
 
     @Override
     public void makeFireworks(double x, double y, double z, double vx, double vy, double vz, NBTTagCompound tag) {
-        if (worldClient != null)
-            worldClient.makeFireworks(x, y, z, vx, vy, vz, tag);
+        if (worldClient != null) worldClient.makeFireworks(x, y, z, vx, vy, vz, tag);
     }
 
     @Override
@@ -225,8 +232,7 @@ public class FakeWorldClient extends WorldClient {
 
     @Override
     public void playSound(double x, double y, double z, String sound, float volume, float pitch, boolean positioned) {
-        if (worldClient != null)
-            worldClient.playSound(x, y, z, sound, volume, pitch, positioned);
+        if (worldClient != null) worldClient.playSound(x, y, z, sound, volume, pitch, positioned);
     }
 
     @Override
@@ -261,7 +267,6 @@ public class FakeWorldClient extends WorldClient {
                 cache.clear();
             }
         }
-
 
     }
 }

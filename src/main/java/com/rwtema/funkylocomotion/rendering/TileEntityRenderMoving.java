@@ -1,8 +1,5 @@
 package com.rwtema.funkylocomotion.rendering;
 
-import com.rwtema.funkylocomotion.blocks.BlockMoving;
-import com.rwtema.funkylocomotion.blocks.TileMovingClient;
-import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -18,238 +15,252 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Facing;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
+
 import org.lwjgl.opengl.GL11;
 
+import com.rwtema.funkylocomotion.blocks.BlockMoving;
+import com.rwtema.funkylocomotion.blocks.TileMovingClient;
+import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+
 public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
-	private RenderBlocks renderBlocks;
-	private World world;
-	private FakeWorldClient fakeWorldClient;
 
-	@Override
-	public void renderTileEntityAt(TileEntity tile, double x, double y, double z, float f) {
-		if (!(tile instanceof TileMovingClient))
-			return;
+    private RenderBlocks renderBlocks;
+    private World world;
+    private FakeWorldClient fakeWorldClient;
 
-		TileMovingClient mover = (TileMovingClient) tile;
-		if (!mover.init)
-			return;
+    @Override
+    public void renderTileEntityAt(TileEntity tile, double x, double y, double z, float f) {
+        if (!(tile instanceof TileMovingClient)) return;
 
-		if (mover.maxTime == 0 || mover.block == Blocks.air)
-			return;
+        TileMovingClient mover = (TileMovingClient) tile;
+        if (!mover.init) return;
 
-		double h = mover.offset(true);
+        if (mover.maxTime == 0 || mover.block == Blocks.air) return;
 
-		int dir = mover.dir;
-		if (dir == -1) {
-			return;
-		}
+        double h = mover.offset(true);
 
-		this.bindTexture(TextureMap.locationBlocksTexture);
-		boolean flag = false;
+        int dir = mover.dir;
+        if (dir == -1) {
+            return;
+        }
 
-		Tessellator tessellator = Tessellator.instance;
+        this.bindTexture(TextureMap.locationBlocksTexture);
+        boolean flag = false;
 
-		int pass = MinecraftForgeClient.getRenderPass();
-		if (mover.render && mover.block.canRenderInPass(pass) && mover.block.getRenderType() >= 0) {
-			GL11.glPushMatrix();
+        Tessellator tessellator = Tessellator.instance;
 
-			setupTranslations(x, y, z, mover, h, dir);
+        int pass = MinecraftForgeClient.getRenderPass();
+        if (mover.render && mover.block.canRenderInPass(pass) && mover.block.getRenderType() >= 0) {
+            GL11.glPushMatrix();
 
-			flag = renderStatic(mover, pass);
+            setupTranslations(x, y, z, mover, h, dir);
 
-			GL11.glPopMatrix();
-			GL11.glEnable(GL11.GL_CULL_FACE);
-		}
+            flag = renderStatic(mover, pass);
 
-		flag = flag | renderDynamic(x, y, z, f, mover, h, dir, pass);
+            GL11.glPopMatrix();
+            GL11.glEnable(GL11.GL_CULL_FACE);
+        }
 
-		if (pass == 0) {
-			mover.failedToRenderInFirstPass = !flag;
-		} else if (!flag && mover.failedToRenderInFirstPass) {
-			GL11.glPushMatrix();
+        flag = flag | renderDynamic(x, y, z, f, mover, h, dir, pass);
 
-			setupTranslations(x, y, z, mover, h, dir);
+        if (pass == 0) {
+            mover.failedToRenderInFirstPass = !flag;
+        } else if (!flag && mover.failedToRenderInFirstPass) {
+            GL11.glPushMatrix();
 
-			RenderHelper.disableStandardItemLighting();
-			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-			GL11.glEnable(GL11.GL_BLEND);
+            setupTranslations(x, y, z, mover, h, dir);
 
-			if (Minecraft.isAmbientOcclusionEnabled()) {
-				GL11.glShadeModel(GL11.GL_SMOOTH);
-			} else {
-				GL11.glShadeModel(GL11.GL_FLAT);
-			}
+            RenderHelper.disableStandardItemLighting();
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.glEnable(GL11.GL_BLEND);
 
-			tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
-			tessellator.startDrawingQuads();
-			renderBlocks.setOverrideBlockTexture(mover.error ? BlockMoving.crate_error : BlockMoving.crate);
-			renderBlocks.renderBlockByRenderType(Blocks.stone, mover.xCoord, mover.yCoord, mover.zCoord);
-			renderBlocks.clearOverrideBlockTexture();
+            if (Minecraft.isAmbientOcclusionEnabled()) {
+                GL11.glShadeModel(GL11.GL_SMOOTH);
+            } else {
+                GL11.glShadeModel(GL11.GL_FLAT);
+            }
 
-			mover.cachedState[0] = leadVertexState();
-			mover.skipPass[0] = false;
-			mover.cachedState[1] = null;
-			mover.skipPass[1] = true;
+            tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
+            tessellator.startDrawingQuads();
+            renderBlocks.setOverrideBlockTexture(mover.error ? BlockMoving.crate_error : BlockMoving.crate);
+            renderBlocks.renderBlockByRenderType(Blocks.stone, mover.xCoord, mover.yCoord, mover.zCoord);
+            renderBlocks.clearOverrideBlockTexture();
 
-			tessellator.draw();
-			GL11.glPopMatrix();
+            mover.cachedState[0] = leadVertexState();
+            mover.skipPass[0] = false;
+            mover.cachedState[1] = null;
+            mover.skipPass[1] = true;
 
-			RenderHelper.enableStandardItemLighting();
-		}
-	}
+            tessellator.draw();
+            GL11.glPopMatrix();
 
-	private void setupTranslations(double x, double y, double z, TileMovingClient mover, double h, int dir) {
-		if(dir < 6) {
-			GL11.glTranslated(x, y, z);
-			GL11.glTranslated(-mover.xCoord, -mover.yCoord, -mover.zCoord);
-			GL11.glTranslated(Facing.offsetsXForSide[dir] * h, Facing.offsetsYForSide[dir] * h, Facing.offsetsZForSide[dir] * h);
-		}else{
-			GL11.glTranslated(x, y, z);
-			GL11.glTranslated(0.5, 0.5, 0.5);
-			double dh = dir == 6 ?  h + 1 : -h;
-			GL11.glScaled(dh, dh, dh);
-			GL11.glTranslated(-0.5, -0.5, -0.5);
-			GL11.glTranslated(-mover.xCoord, -mover.yCoord, -mover.zCoord);
-		}
-	}
+            RenderHelper.enableStandardItemLighting();
+        }
+    }
 
-	protected boolean renderDynamic(double x, double y, double z, float f, TileMovingClient mover, double h, int dir, int pass) {
-		if (mover.tile == null || !mover.tile.shouldRenderInPass(pass))
-			return false;
+    private void setupTranslations(double x, double y, double z, TileMovingClient mover, double h, int dir) {
+        if (dir < 6) {
+            GL11.glTranslated(x, y, z);
+            GL11.glTranslated(-mover.xCoord, -mover.yCoord, -mover.zCoord);
+            GL11.glTranslated(
+                Facing.offsetsXForSide[dir] * h,
+                Facing.offsetsYForSide[dir] * h,
+                Facing.offsetsZForSide[dir] * h);
+        } else {
+            GL11.glTranslated(x, y, z);
+            GL11.glTranslated(0.5, 0.5, 0.5);
+            double dh = dir == 6 ? h + 1 : -h;
+            GL11.glScaled(dh, dh, dh);
+            GL11.glTranslated(-0.5, -0.5, -0.5);
+            GL11.glTranslated(-mover.xCoord, -mover.yCoord, -mover.zCoord);
+        }
+    }
 
-		if (fakeWorldClient == null && !createCache())
-			return false;
+    protected boolean renderDynamic(double x, double y, double z, float f, TileMovingClient mover, double h, int dir,
+        int pass) {
+        if (mover.tile == null || !mover.tile.shouldRenderInPass(pass)) return false;
 
-		TileEntitySpecialRenderer specialRenderer = TileEntityRendererDispatcher.instance.getSpecialRenderer(mover.tile);
-		if (specialRenderer == null)
-			return false;
+        if (fakeWorldClient == null && !createCache()) return false;
 
-		GL11.glPushMatrix();
-		setupTranslations(x, y, z, mover, h, dir);
-		try {
-			specialRenderer.func_147496_a(fakeWorldClient);
-			WorldClient prevWorld1 = Minecraft.getMinecraft().theWorld;
-			World prevWorld2 = Minecraft.getMinecraft().thePlayer.worldObj;
+        TileEntitySpecialRenderer specialRenderer = TileEntityRendererDispatcher.instance
+            .getSpecialRenderer(mover.tile);
+        if (specialRenderer == null) return false;
 
-			try {
-				Minecraft.getMinecraft().theWorld = fakeWorldClient;
-				Minecraft.getMinecraft().thePlayer.worldObj = fakeWorldClient;
-				specialRenderer.renderTileEntityAt(mover.tile, mover.xCoord, mover.yCoord, mover.zCoord, f);
-			} finally {
-				Minecraft.getMinecraft().theWorld = prevWorld1;
-				Minecraft.getMinecraft().thePlayer.worldObj = prevWorld2;
-			}
-			specialRenderer.func_147496_a(world);
-		} catch (Exception e) {
-			FLRenderHelper.clearTessellator();
+        GL11.glPushMatrix();
+        setupTranslations(x, y, z, mover, h, dir);
+        try {
+            specialRenderer.func_147496_a(fakeWorldClient);
+            WorldClient prevWorld1 = Minecraft.getMinecraft().theWorld;
+            World prevWorld2 = Minecraft.getMinecraft().thePlayer.worldObj;
 
-			(new RuntimeException(
-					"Unable to render TSER " + mover.tile.getClass().getName() + " for "
-							+ Block.blockRegistry.getNameForObject(mover.block)
-							+ " with meta " + mover.meta + " at ("
-							+ mover.xCoord + "," + mover.yCoord + mover.zCoord + "). Disabling Rendering."
-					, e
-			)).printStackTrace();
+            try {
+                Minecraft.getMinecraft().theWorld = fakeWorldClient;
+                Minecraft.getMinecraft().thePlayer.worldObj = fakeWorldClient;
+                specialRenderer.renderTileEntityAt(mover.tile, mover.xCoord, mover.yCoord, mover.zCoord, f);
+            } finally {
+                Minecraft.getMinecraft().theWorld = prevWorld1;
+                Minecraft.getMinecraft().thePlayer.worldObj = prevWorld2;
+            }
+            specialRenderer.func_147496_a(world);
+        } catch (Exception e) {
+            FLRenderHelper.clearTessellator();
 
-			TileMovingClient.renderErrorList.add(mover.tile.getClass());
-			mover.error = true;
-			mover.tile = null;
-			mover.render = false;
-		}
+            (new RuntimeException(
+                "Unable to render TSER " + mover.tile.getClass()
+                    .getName()
+                    + " for "
+                    + Block.blockRegistry.getNameForObject(mover.block)
+                    + " with meta "
+                    + mover.meta
+                    + " at ("
+                    + mover.xCoord
+                    + ","
+                    + mover.yCoord
+                    + mover.zCoord
+                    + "). Disabling Rendering.",
+                e)).printStackTrace();
 
-		GL11.glPopMatrix();
-		return true;
-	}
+            TileMovingClient.renderErrorList.add(mover.tile.getClass());
+            mover.error = true;
+            mover.tile = null;
+            mover.render = false;
+        }
 
-	protected boolean renderStatic(TileMovingClient mover, int pass) {
-		if (mover.skipPass[pass])
-			return true;
+        GL11.glPopMatrix();
+        return true;
+    }
 
+    protected boolean renderStatic(TileMovingClient mover, int pass) {
+        if (mover.skipPass[pass]) return true;
 
-		RenderHelper.disableStandardItemLighting();
+        RenderHelper.disableStandardItemLighting();
 
-		if (pass != 0) {
-			GL11.glEnable(GL11.GL_BLEND);
-			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		}
+        if (pass != 0) {
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        }
 
-		GL11.glEnable(GL11.GL_CULL_FACE);
+        GL11.glEnable(GL11.GL_CULL_FACE);
 
-		if (Minecraft.isAmbientOcclusionEnabled()) {
-			GL11.glShadeModel(GL11.GL_SMOOTH);
-		} else {
-			GL11.glShadeModel(GL11.GL_FLAT);
-		}
+        if (Minecraft.isAmbientOcclusionEnabled()) {
+            GL11.glShadeModel(GL11.GL_SMOOTH);
+        } else {
+            GL11.glShadeModel(GL11.GL_FLAT);
+        }
 
-		Tessellator tessellator = Tessellator.instance;
+        Tessellator tessellator = Tessellator.instance;
 
-		if (mover.cachedState[pass] != null) {
-			tessellator.startDrawingQuads();
-			tessellator.setVertexState(mover.cachedState[pass]);
-			tessellator.draw();
-		} else {
+        if (mover.cachedState[pass] != null) {
+            tessellator.startDrawingQuads();
+            tessellator.setVertexState(mover.cachedState[pass]);
+            tessellator.draw();
+        } else {
 
-			tessellator.startDrawingQuads();
-			tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
+            tessellator.startDrawingQuads();
+            tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
 
-			mover.cachedState[pass] = null;
-			mover.skipPass[pass] = true;
+            mover.cachedState[pass] = null;
+            mover.skipPass[pass] = true;
 
-			try {
-				if (renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord)) {
-					if (tessellator.rawBufferIndex > 0) {
-						mover.cachedState[pass] = leadVertexState();
-						mover.skipPass[pass] = false;
-					}
-				}
+            try {
+                if (renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord)) {
+                    if (tessellator.rawBufferIndex > 0) {
+                        mover.cachedState[pass] = leadVertexState();
+                        mover.skipPass[pass] = false;
+                    }
+                }
 
-			} catch (Exception e) {
-				(new RuntimeException(
-						"Unable to render block " + Block.blockRegistry.getNameForObject(mover.block)
-								+ " with meta " + mover.meta + " at ("
-								+ mover.xCoord + "," + mover.yCoord + mover.zCoord + "). Disabling Rendering."
-						, e
-				)).printStackTrace();
+            } catch (Exception e) {
+                (new RuntimeException(
+                    "Unable to render block " + Block.blockRegistry.getNameForObject(mover.block)
+                        + " with meta "
+                        + mover.meta
+                        + " at ("
+                        + mover.xCoord
+                        + ","
+                        + mover.yCoord
+                        + mover.zCoord
+                        + "). Disabling Rendering.",
+                    e)).printStackTrace();
 
-				TileMovingClient.renderErrorList.add(mover.block.getClass());
-				mover.tile = null;
-				mover.render = false;
-				mover.error = true;
+                TileMovingClient.renderErrorList.add(mover.block.getClass());
+                mover.tile = null;
+                mover.render = false;
+                mover.error = true;
 
-				mover.cachedState[pass] = null;
-				mover.skipPass[pass] = true;
-			}
+                mover.cachedState[pass] = null;
+                mover.skipPass[pass] = true;
+            }
 
+            tessellator.draw();
+        }
+        RenderHelper.enableStandardItemLighting();
+        return true;
+    }
 
-			tessellator.draw();
-		}
-		RenderHelper.enableStandardItemLighting();
-		return true;
-	}
+    private static TesselatorVertexState leadVertexState() {
 
-	private static TesselatorVertexState leadVertexState() {
+        return Tessellator.instance.getVertexState(
+            (float) Minecraft.getMinecraft().thePlayer.posX,
+            (float) Minecraft.getMinecraft().thePlayer.posY,
+            (float) Minecraft.getMinecraft().thePlayer.posZ);
 
-		return Tessellator.instance.getVertexState(
-				(float) Minecraft.getMinecraft().thePlayer.posX,
-				(float) Minecraft.getMinecraft().thePlayer.posY,
-				(float) Minecraft.getMinecraft().thePlayer.posZ);
+    }
 
-	}
+    public void func_147496_a(World world) {
+        this.world = world;
+        createCache();
+    }
 
-	public void func_147496_a(World world) {
-		this.world = world;
-		createCache();
-	}
-
-	private boolean createCache() {
-		if (!FakeWorldClient.isValid(world)) {
-			fakeWorldClient = null;
-			renderBlocks = null;
-			return false;
-		} else {
-			this.fakeWorldClient = FakeWorldClient.getFakeWorldWrapper(this.world);
-			this.renderBlocks = new RenderBlocks(fakeWorldClient);
-			return true;
-		}
-	}
+    private boolean createCache() {
+        if (!FakeWorldClient.isValid(world)) {
+            fakeWorldClient = null;
+            renderBlocks = null;
+            return false;
+        } else {
+            this.fakeWorldClient = FakeWorldClient.getFakeWorldWrapper(this.world);
+            this.renderBlocks = new RenderBlocks(fakeWorldClient);
+            return true;
+        }
+    }
 }

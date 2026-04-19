@@ -1,13 +1,15 @@
 package com.rwtema.funkylocomotion.blocks;
 
-import com.rwtema.funkylocomotion.movers.MoveManager;
-import com.rwtema.funkylocomotion.movers.MovingTileRegistry;
-import cpw.mods.fml.relauncher.Side;
+import java.lang.ref.WeakReference;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 
-import java.lang.ref.WeakReference;
+import com.rwtema.funkylocomotion.movers.MoveManager;
+import com.rwtema.funkylocomotion.movers.MovingTileRegistry;
+
+import cpw.mods.fml.relauncher.Side;
 
 public class TileMovingServer extends TileMovingBase {
 
@@ -15,24 +17,20 @@ public class TileMovingServer extends TileMovingBase {
     public int activatingSide = -1;
     public float activatingHitX, activatingHitY, activatingHitZ;
 
-
     public TileMovingServer() {
         super(Side.SERVER);
     }
 
     @Override
     public Packet getDescriptionPacket() {
-        if (desc == null)
-            return null;
+        if (desc == null) return null;
 
         desc.setInteger("Time", time);
         desc.setInteger("MaxTime", maxTime);
         desc.setByte("Dir", (byte) dir);
 
-        if (lightLevel > 0)
-            desc.setByte("Light", (byte) lightLevel);
-        if (lightOpacity > 0)
-            desc.setShort("Opacity", (short) lightOpacity);
+        if (lightLevel > 0) desc.setByte("Light", (byte) lightLevel);
+        if (lightOpacity > 0) desc.setShort("Opacity", (short) lightOpacity);
 
         if (collisions.length > 0) {
             desc.setTag("Collisions", TagsAxis(collisions));
@@ -65,8 +63,7 @@ public class TileMovingServer extends TileMovingBase {
 
             super.updateEntity();
             this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
-        } else
-            MoveManager.finishMoving();
+        } else MoveManager.finishMoving();
     }
 
     public void cacheActivate(EntityPlayer player, int side, float hitX, float hitY, float hitZ) {

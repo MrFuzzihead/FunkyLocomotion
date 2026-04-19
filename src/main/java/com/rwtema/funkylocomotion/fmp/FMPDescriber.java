@@ -1,24 +1,27 @@
 package com.rwtema.funkylocomotion.fmp;
 
-import codechicken.lib.data.MCDataOutputWrapper;
-import codechicken.lib.packet.PacketCustom;
-import codechicken.multipart.MultiPartRegistry;
-import codechicken.multipart.TMultiPart;
-import codechicken.multipart.TileMultipart;
-import framesapi.BlockPos;
-import framesapi.IDescriptionProxy;
-import io.netty.buffer.Unpooled;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.util.ArrayList;
+
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.util.ArrayList;
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
+
+import codechicken.lib.data.MCDataOutputWrapper;
+import codechicken.lib.packet.PacketCustom;
+import codechicken.multipart.MultiPartRegistry;
+import codechicken.multipart.TMultiPart;
+import codechicken.multipart.TileMultipart;
+import io.netty.buffer.Unpooled;
 
 public class FMPDescriber implements IDescriptionProxy {
+
     @Override
     public String getID() {
         return "FMP";
@@ -40,9 +43,9 @@ public class FMPDescriber implements IDescriptionProxy {
     }
 
     @Override
-    public TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos, World world) {
-        if (!tag.hasKey("Tile", 7))
-            return block.createTileEntity(world, meta);
+    public TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos,
+        World world) {
+        if (!tag.hasKey("Tile", 7)) return block.createTileEntity(world, meta);
 
         byte[] bytes = tag.getByteArray("Tile");
 
@@ -50,15 +53,11 @@ public class FMPDescriber implements IDescriptionProxy {
         int nparts = packet.readByte();
         ArrayList<TMultiPart> parts = new ArrayList<TMultiPart>();
 
-
         for (int i = 0; i < nparts; i++) {
             TMultiPart part = MultiPartRegistry.readPart(packet);
             part.readDesc(packet);
             parts.add(part);
         }
-
-        if (parts.size() == 0)
-            return block.createTileEntity(world, meta);
 
         return block.createTileEntity(world, meta);
     }

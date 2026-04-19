@@ -1,12 +1,12 @@
-package framesapi;
+package com.rwtema.funkylocomotion.api;
 
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Facing;
 import net.minecraftforge.common.util.ForgeDirection;
 
 public final class BlockPos {
-    public int x, y, z;
 
+    public int x, y, z;
 
     public BlockPos(int x, int y, int z) {
         this.x = x;
@@ -34,25 +34,19 @@ public final class BlockPos {
         this(tile.xCoord, tile.yCoord, tile.zCoord);
     }
 
-
     public BlockPos advance(ForgeDirection dir) {
         return new BlockPos(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ);
     }
 
-	@Override
-	public String toString() {
-		return "Pos{" +
-				"" + x +
-				", " + y +
-				", " + z +
-				'}';
-	}
+    @Override
+    public String toString() {
+        return "Pos{" + "" + x + ", " + y + ", " + z + '}';
+    }
 
-	public BlockPos advance(int i) {
-		return new BlockPos(
-				x + Facing.offsetsXForSide[i],
-				y + Facing.offsetsYForSide[i],
-				z + Facing.offsetsZForSide[i]
-		);
-	}
+    public BlockPos advance(int i) {
+        return new BlockPos(
+            x + Facing.offsetsXForSide[i],
+            y + Facing.offsetsYForSide[i],
+            z + Facing.offsetsZForSide[i]);
+    }
 }

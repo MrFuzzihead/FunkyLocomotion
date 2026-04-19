@@ -1,13 +1,16 @@
 package com.rwtema.funkylocomotion.proxydelegates;
 
-import cofh.api.block.IBlockAppearance;
-import com.rwtema.funkylocomotion.blocks.BlockStickyFrame;
-import framesapi.IStickyBlock;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.api.IStickyBlock;
+import com.rwtema.funkylocomotion.blocks.BlockStickyFrame;
+
+import cofh.api.block.IBlockAppearance;
+
 public class COFHStickiness implements IStickyBlock {
+
     @Override
     public boolean isStickySide(World world, int x, int y, int z, ForgeDirection side) {
         return isStickySide_do(world, x, y, z, side);
@@ -17,8 +20,7 @@ public class COFHStickiness implements IStickyBlock {
         IBlockAppearance block = (IBlockAppearance) world.getBlock(x, y, z);
 
         Block visualBlock = block.getVisualBlock(world, x, y, z, side);
-        if (!(visualBlock instanceof BlockStickyFrame))
-            return false;
+        if (!(visualBlock instanceof BlockStickyFrame)) return false;
 
         int visualMeta = block.getVisualMeta(world, x, y, z, side);
 

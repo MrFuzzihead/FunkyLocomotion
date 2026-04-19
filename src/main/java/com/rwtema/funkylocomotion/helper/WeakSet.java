@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 public class WeakSet<E> extends AbstractSet<E> implements Set<E> {
+
     private final WeakHashMap<E, Object> map = new WeakHashMap<E, Object>();
     private static final Object BLANK = new Object();
 
@@ -17,7 +18,8 @@ public class WeakSet<E> extends AbstractSet<E> implements Set<E> {
     @SuppressWarnings("NullableProblems")
     @Override
     public Iterator<E> iterator() {
-        return map.keySet().iterator();
+        return map.keySet()
+            .iterator();
     }
 
     @Override

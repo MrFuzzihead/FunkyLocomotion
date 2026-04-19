@@ -1,23 +1,26 @@
 package com.rwtema.funkylocomotion.description;
 
-import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
-import framesapi.IDescriptionProxy;
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IDescriptionProxy;
+import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
 public abstract class DescribeBase implements IDescriptionProxy {
+
     @Override
     @SideOnly(Side.CLIENT)
-    public TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos, World world) {
-        if(!FakeWorldClient.isValid(world)) return null;
-        if (!block.hasTileEntity(meta))
-            return null;
+    public TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos,
+        World world) {
+        if (!FakeWorldClient.isValid(world)) return null;
+        if (!block.hasTileEntity(meta)) return null;
 
         TileEntity tile = block.createTileEntity(world, meta);
         if (tile != null) {

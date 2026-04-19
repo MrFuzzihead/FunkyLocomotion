@@ -1,17 +1,25 @@
 package com.rwtema.funkylocomotion.description;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
-import net.minecraft.tileentity.*;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityBeacon;
+import net.minecraft.tileentity.TileEntityCommandBlock;
+import net.minecraft.tileentity.TileEntityFlowerPot;
+import net.minecraft.tileentity.TileEntityMobSpawner;
+import net.minecraft.tileentity.TileEntitySkull;
 import net.minecraft.world.World;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
 public class DescribeVanilla extends DescribeBase {
+
     @Override
     public String getID() {
         return "";
@@ -35,17 +43,17 @@ public class DescribeVanilla extends DescribeBase {
 
     @Override
     @SideOnly(Side.CLIENT)
-    public TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos, World world) {
+    public TileEntity recreateTileEntity(NetworkManager net, NBTTagCompound tag, Block block, int meta, BlockPos pos,
+        World world) {
         TileEntity tile = super.recreateTileEntity(net, tag, block, meta, pos, world);
         if (tile != null) {
             if (tag.hasKey("Tile", 10)) {
                 NBTTagCompound tileTag = tag.getCompoundTag("Tile");
 
-                if (tile instanceof TileEntityMobSpawner ||
-                        tile instanceof TileEntityCommandBlock ||
-                        tile instanceof TileEntityBeacon ||
-                        tile instanceof TileEntitySkull ||
-                        tile instanceof TileEntityFlowerPot) {
+                if (tile instanceof TileEntityMobSpawner || tile instanceof TileEntityCommandBlock
+                    || tile instanceof TileEntityBeacon
+                    || tile instanceof TileEntitySkull
+                    || tile instanceof TileEntityFlowerPot) {
                     tile.readFromNBT(tileTag);
                 } else {
                     S35PacketUpdateTileEntity newpkt = new S35PacketUpdateTileEntity(pos.x, pos.y, pos.z, 0, tileTag);

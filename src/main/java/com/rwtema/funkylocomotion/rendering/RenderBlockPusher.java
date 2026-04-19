@@ -1,14 +1,17 @@
 package com.rwtema.funkylocomotion.rendering;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.util.Facing;
 import net.minecraft.world.IBlockAccess;
+
 import org.lwjgl.opengl.GL11;
+
+import com.rwtema.funkylocomotion.FunkyLocomotion;
+
+import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
@@ -33,7 +36,8 @@ public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
     }
 
     @Override
-    public boolean renderWorldBlock(IBlockAccess world, int x, int y, int z, Block block, int modelId, RenderBlocks renderer) {
+    public boolean renderWorldBlock(IBlockAccess world, int x, int y, int z, Block block, int modelId,
+        RenderBlocks renderer) {
         int meta = Facing.oppositeSide[world.getBlockMetadata(x, y, z) % 6];
         setRotations(renderer, meta);
         boolean flag = renderer.renderStandardBlock(block, x, y, z);
@@ -48,8 +52,6 @@ public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
                 break;
 
             case 1:
-            default:
-                break;
 
             case 2:
                 renderer.uvRotateNorth = 2;
@@ -69,12 +71,14 @@ public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
                 renderer.uvRotateWest = 2;
                 break;
 
-
             case 5:
                 renderer.uvRotateTop = 1;
                 renderer.uvRotateBottom = 2;
                 renderer.uvRotateEast = 2;
                 renderer.uvRotateWest = 1;
+                break;
+
+            default:
                 break;
         }
     }

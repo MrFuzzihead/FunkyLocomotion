@@ -12,22 +12,23 @@ import com.rwtema.funkylocomotion.items.ItemBlockFrame;
 
 public class FrameDispenserAcion extends BehaviorDefaultDispenseItem {
 
-	@Override
-	public ItemStack dispenseStack(IBlockSource pos, ItemStack stack) {
-		if (stack.getItem() instanceof ItemBlockFrame) {
-			ItemBlockFrame frame = (ItemBlockFrame) stack.getItem();
-			
-			EnumFacing facing = BlockDispenser.func_149937_b(pos.getBlockMetadata());
-			World world = pos.getWorld();
-			int x = pos.getXInt() + facing.getFrontOffsetX();
-			int y = pos.getYInt() + facing.getFrontOffsetY();
-			int z = pos.getZInt() + facing.getFrontOffsetZ();
-			if (world.getBlock(x, y, z).isReplaceable(world, x, y, z)) {
-				world.setBlock(x, y, z, FunkyLocomotion.frame[frame.index / 16], stack.getItemDamage(), 3);
-				stack.stackSize--;
-			}
-		}
-		
-		return stack;
-	}
+    @Override
+    public ItemStack dispenseStack(IBlockSource pos, ItemStack stack) {
+        if (stack.getItem() instanceof ItemBlockFrame) {
+            ItemBlockFrame frame = (ItemBlockFrame) stack.getItem();
+
+            EnumFacing facing = BlockDispenser.func_149937_b(pos.getBlockMetadata());
+            World world = pos.getWorld();
+            int x = pos.getXInt() + facing.getFrontOffsetX();
+            int y = pos.getYInt() + facing.getFrontOffsetY();
+            int z = pos.getZInt() + facing.getFrontOffsetZ();
+            if (world.getBlock(x, y, z)
+                .isReplaceable(world, x, y, z)) {
+                world.setBlock(x, y, z, FunkyLocomotion.frame[frame.index / 16], stack.getItemDamage(), 3);
+                stack.stackSize--;
+            }
+        }
+
+        return stack;
+    }
 }

@@ -1,7 +1,7 @@
 package com.rwtema.funkylocomotion.rendering;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-import com.rwtema.funkylocomotion.items.ItemWrench;
+import java.nio.FloatBuffer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -9,13 +9,16 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.client.IItemRenderer;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
-import java.nio.FloatBuffer;
+import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.items.ItemWrench;
 
 public class RenderItemWrench implements IItemRenderer {
+
     @Override
     public boolean handleRenderType(ItemStack item, ItemRenderType type) {
         return item.getItemDamage() == ItemWrench.metaWrenchEye && type == ItemRenderType.INVENTORY;
@@ -62,7 +65,9 @@ public class RenderItemWrench implements IItemRenderer {
             }
         } else {
             int mouseX = Mouse.getX() * currentScreen.width / Minecraft.getMinecraft().displayWidth;
-            int mouseY = currentScreen.height - Mouse.getEventY() * currentScreen.height / Minecraft.getMinecraft().displayHeight - 1;
+            int mouseY = currentScreen.height
+                - Mouse.getEventY() * currentScreen.height / Minecraft.getMinecraft().displayHeight
+                - 1;
 
             FloatBuffer matrixData = BufferUtils.createFloatBuffer(16);
             GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrixData);
@@ -70,12 +75,12 @@ public class RenderItemWrench implements IItemRenderer {
             float x = (matrixData.get(12) + 8);
             float y = (matrixData.get(13) + 8);
 
-            double dx = (mouseX - x) * 0.125*0.25;
-            double dy = (mouseY - y) * 0.125*0.25;
+            double dx = (mouseX - x) * 0.125 * 0.25;
+            double dy = (mouseY - y) * 0.125 * 0.25;
 
             double d = dx * dx + dy * dy;
             double r = 0.5;
-            if (d > r*r) {
+            if (d > r * r) {
                 d = Math.sqrt(d);
                 dx *= r / d;
                 dy *= r / d;
@@ -87,7 +92,6 @@ public class RenderItemWrench implements IItemRenderer {
         }
 
         GL11.glEnable(GL11.GL_LIGHTING);
-
 
         GL11.glEnable(GL11.GL_CULL_FACE);
     }

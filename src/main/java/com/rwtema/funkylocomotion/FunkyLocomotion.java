@@ -1,7 +1,23 @@
 package com.rwtema.funkylocomotion;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockDispenser;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
+import net.minecraftforge.common.config.Configuration;
+
 import com.rwtema.funkylocomotion.asm.WrenchFactory;
-import com.rwtema.funkylocomotion.blocks.*;
+import com.rwtema.funkylocomotion.blocks.BlockBooster;
+import com.rwtema.funkylocomotion.blocks.BlockMoving;
+import com.rwtema.funkylocomotion.blocks.BlockPusher;
+import com.rwtema.funkylocomotion.blocks.BlockSlider;
+import com.rwtema.funkylocomotion.blocks.BlockStickyFrame;
+import com.rwtema.funkylocomotion.blocks.BlockTeleport;
+import com.rwtema.funkylocomotion.blocks.TileBooster;
+import com.rwtema.funkylocomotion.blocks.TileMovingServer;
+import com.rwtema.funkylocomotion.blocks.TilePusher;
+import com.rwtema.funkylocomotion.blocks.TileSlider;
+import com.rwtema.funkylocomotion.blocks.TileTeleport;
 import com.rwtema.funkylocomotion.dispenser.FrameDispenserAcion;
 import com.rwtema.funkylocomotion.dispenser.WrenchDispenserAction;
 import com.rwtema.funkylocomotion.factory.FactoryRegistry;
@@ -15,6 +31,7 @@ import com.rwtema.funkylocomotion.movers.MoverEventHandler;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.proxydelegates.COFHStickiness;
 import com.rwtema.funkylocomotion.thaumcraft.NodeMover;
+
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
@@ -24,16 +41,16 @@ import cpw.mods.fml.common.event.FMLInterModComms;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockDispenser;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraftforge.common.config.Configuration;
 
-@Mod(modid = FunkyLocomotion.MODID, version = FunkyLocomotion.VERSION, dependencies = "after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)")
+@Mod(
+    modid = FunkyLocomotion.MODID,
+    name = FunkyLocomotion.MODNAME,
+    version = Tags.VERSION,
+    dependencies = "after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)")
 public class FunkyLocomotion {
+
     public static final String MODID = "funkylocomotion";
-    public static final String VERSION = "1.0";
+    public static final String MODNAME = "Funky Locomotion";
 
     @SidedProxy(serverSide = "com.rwtema.funkylocomotion.Proxy", clientSide = "com.rwtema.funkylocomotion.ProxyClient")
     public static Proxy proxy;
@@ -45,25 +62,29 @@ public class FunkyLocomotion {
     public static BlockPusher pusher;
     public static BlockMoving moving;
     public static BlockSlider slider;
-	public static BlockBooster booster;
-	public static BlockTeleport teleporter;
-	public static boolean redrawChunksInstantly;
+    public static BlockBooster booster;
+    public static BlockTeleport teleporter;
+    public static boolean redrawChunksInstantly;
 
-
-	@EventHandler
-    public void preinit(FMLPreInitializationEvent event) {
+    @EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
         LogHelper.info("Let's Move!");
         FLNetwork.init();
 
         Configuration config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
-        TilePusher.maxTiles = config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024).getInt(1024);
-        TilePusher.powerPerTile = config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250).getInt(250);
-        Recipes.shouldAddRecipes = config.get(Configuration.CATEGORY_GENERAL, "addRecipes", true).getBoolean(true);
-        Recipes.shouldAddFrameCopyResetRecipes = config.get(Configuration.CATEGORY_GENERAL, "addFrameCopyResetRecipes", true).getBoolean(true);
-		redrawChunksInstantly = config.get("client", "redrawChunksInstantly", true).getBoolean(true);
-        if (config.hasChanged())
-            config.save();
+        TilePusher.maxTiles = config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
+            .getInt(1024);
+        TilePusher.powerPerTile = config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250)
+            .getInt(250);
+        Recipes.shouldAddRecipes = config.get(Configuration.CATEGORY_GENERAL, "addRecipes", true)
+            .getBoolean(true);
+        Recipes.shouldAddFrameCopyResetRecipes = config
+            .get(Configuration.CATEGORY_GENERAL, "addFrameCopyResetRecipes", true)
+            .getBoolean(true);
+        redrawChunksInstantly = config.get("client", "redrawChunksInstantly", true)
+            .getBoolean(true);
+        if (config.hasChanged()) config.save();
 
         EntityMovingEventHandler.init();
         MoverEventHandler.init();
@@ -75,16 +96,16 @@ public class FunkyLocomotion {
         GameRegistry.registerBlock(moving = new BlockMoving(), "moving");
         GameRegistry.registerBlock(pusher = new BlockPusher(), ItemBlockPusher.class, "pusher");
         GameRegistry.registerBlock(slider = new BlockSlider(), "slider");
-		GameRegistry.registerBlock(teleporter = new BlockTeleport(), ItemBlockTeleporter.class, "teleporter");
-		GameRegistry.registerBlock(booster = new BlockBooster(), "booster");
+        GameRegistry.registerBlock(teleporter = new BlockTeleport(), ItemBlockTeleporter.class, "teleporter");
+        GameRegistry.registerBlock(booster = new BlockBooster(), "booster");
 
-		GameRegistry.registerItem(wrench = WrenchFactory.makeMeAWrench(), "wrench");
+        GameRegistry.registerItem(wrench = WrenchFactory.makeMeAWrench(), "wrench");
 
         GameRegistry.registerTileEntity(TileMovingServer.class, "funkylocomotion:tileMover");
         GameRegistry.registerTileEntity(TilePusher.class, "funkylocomotion:tilePusher");
         GameRegistry.registerTileEntity(TileSlider.class, "funkylocomotion:tileSlider");
-		GameRegistry.registerTileEntity(TileBooster.class, "funkylocomotion:tileBooster");
-		GameRegistry.registerTileEntity(TileTeleport.class, "funkylocomotion:tileTeleporter");
+        GameRegistry.registerTileEntity(TileBooster.class, "funkylocomotion:tileBooster");
+        GameRegistry.registerTileEntity(TileTeleport.class, "funkylocomotion:tileTeleporter");
 
         proxy.registerRendering();
 
@@ -101,16 +122,15 @@ public class FunkyLocomotion {
             FMPStickness.init(b);
         }
 
-		try{
-			Class<?> nodeClazz = Class.forName("thaumcraft.api.nodes.INode");
-			Block b = (Block) Block.blockRegistry.getObject("Thaumcraft:blockAiry");
-			if (b != Blocks.air && nodeClazz != null)
-				FactoryRegistry.moveFactoryMapBlock.put(b, new NodeMover());
-		} catch (ClassNotFoundException ignore) {
+        try {
+            Class<?> nodeClazz = Class.forName("thaumcraft.api.nodes.INode");
+            Block b = (Block) Block.blockRegistry.getObject("Thaumcraft:blockAiry");
+            if (b != Blocks.air && nodeClazz != null) FactoryRegistry.moveFactoryMapBlock.put(b, new NodeMover());
+        } catch (ClassNotFoundException ignore) {
 
-		}
+        }
 
-        try{
+        try {
             Class.forName("cofh.api.block.IBlockAppearance");
             COFHStickiness.register();
         } catch (ClassNotFoundException ignore) {
@@ -123,15 +143,13 @@ public class FunkyLocomotion {
         Recipes.addRecipes();
     }
 
-
     public void handleIMC(FMLInterModComms.IMCEvent event) {
         for (FMLInterModComms.IMCMessage msg : event.getMessages()) {
             if ("blacklist".equals(msg.key) && msg.isStringMessage()) {
                 String s = msg.getStringValue();
-                //TODO
+                // TODO
             }
         }
     }
-
 
 }

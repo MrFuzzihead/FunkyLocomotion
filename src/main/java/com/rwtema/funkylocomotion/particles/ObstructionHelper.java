@@ -1,12 +1,5 @@
 package com.rwtema.funkylocomotion.particles;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-import com.rwtema.funkylocomotion.items.ItemWrench;
-import com.rwtema.funkylocomotion.network.FLNetwork;
-import com.rwtema.funkylocomotion.network.MessageObstruction;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import framesapi.BlockPos;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -15,15 +8,27 @@ import net.minecraft.server.management.PlayerManager;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.items.ItemWrench;
+import com.rwtema.funkylocomotion.network.FLNetwork;
+import com.rwtema.funkylocomotion.network.MessageObstruction;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
 public class ObstructionHelper {
+
     @SideOnly(Side.CLIENT)
     public static boolean shouldRenderParticles() {
         return playerHoldingWrench(Minecraft.getMinecraft().thePlayer);
     }
 
     private static boolean playerHoldingWrench(EntityPlayer thePlayer) {
-        return !(thePlayer == null || thePlayer.getHeldItem() == null) &&
-                thePlayer.getHeldItem().getItem() == FunkyLocomotion.wrench && thePlayer.getHeldItem().getItemDamage() == ItemWrench.metaWrenchEye;
+        return !(thePlayer == null || thePlayer.getHeldItem() == null) && thePlayer.getHeldItem()
+            .getItem() == FunkyLocomotion.wrench
+            && thePlayer.getHeldItem()
+                .getItemDamage() == ItemWrench.metaWrenchEye;
     }
 
     public static boolean sendObstructionPacket(World world, BlockPos pos, ForgeDirection dir) {
@@ -38,7 +43,7 @@ public class ObstructionHelper {
             if (!playerHoldingWrench(entityplayermp)) continue;
 
             if (!entityplayermp.loadedChunks.contains(chunkWatcher.chunkLocation)) {
-                if(packet == null) packet = FLNetwork.net.getPacketFrom(new MessageObstruction(pos, dir));
+                if (packet == null) packet = FLNetwork.net.getPacketFrom(new MessageObstruction(pos, dir));
                 entityplayermp.playerNetServerHandler.sendPacket(packet);
             }
         }

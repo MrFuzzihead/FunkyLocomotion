@@ -1,7 +1,7 @@
 package com.rwtema.funkylocomotion.blocks;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-import com.rwtema.funkylocomotion.helper.ItemHelper;
+import java.util.List;
+
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
@@ -12,9 +12,11 @@ import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import java.util.List;
+import com.rwtema.funkylocomotion.FunkyLocomotion;
+import com.rwtema.funkylocomotion.helper.ItemHelper;
 
 public final class BlockStickyFrame extends BlockFrame {
+
     public static final BlockStickyFrame[] blocks = new BlockStickyFrame[4];
     public final int index;
     IIcon filled;
@@ -24,8 +26,7 @@ public final class BlockStickyFrame extends BlockFrame {
         this.index = index * 16;
         blocks[index] = this;
         this.setBlockName("funkylocomotion:frame");
-        if (index == 0)
-            this.setCreativeTab(FunkyLocomotion.creativeTabFrames);
+        if (index == 0) this.setCreativeTab(FunkyLocomotion.creativeTabFrames);
         this.setLightOpacity(0);
     }
 
@@ -56,15 +57,14 @@ public final class BlockStickyFrame extends BlockFrame {
     }
 
     @Override
-    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
+    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+        float hitY, float hitZ) {
         ItemStack item = player.getHeldItem();
-        if (!(ItemHelper.isWrench(item)))
-            return false;
+        if (!(ItemHelper.isWrench(item))) return false;
 
         int i = (index + world.getBlockMetadata(x, y, z)) ^ (1 << side);
 
-        if (i > 63 || i < 0)
-            i = 0;
+        if (i > 63 || i < 0) i = 0;
 
         int meta = i % 16;
         Block block = blocks[(i - meta) / 16];

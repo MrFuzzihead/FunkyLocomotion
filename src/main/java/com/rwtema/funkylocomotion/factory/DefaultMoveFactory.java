@@ -1,8 +1,5 @@
 package com.rwtema.funkylocomotion.factory;
 
-import com.rwtema.funkylocomotion.helper.BlockHelper;
-import framesapi.BlockPos;
-import framesapi.IMoveFactory;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -11,7 +8,12 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
+import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IMoveFactory;
+import com.rwtema.funkylocomotion.helper.BlockHelper;
+
 public class DefaultMoveFactory implements IMoveFactory {
+
     public static NBTTagCompound getBBTag(AxisAlignedBB bb, BlockPos pos) {
         NBTTagCompound tag = new NBTTagCompound();
         tag.setDouble("x1", bb.minX - pos.x);
@@ -36,8 +38,7 @@ public class DefaultMoveFactory implements IMoveFactory {
         String name = Block.blockRegistry.getNameForObject(b);
 
         tag.setString("Block", name);
-        if (meta != 0)
-            tag.setByte("Meta", (byte) meta);
+        if (meta != 0) tag.setByte("Meta", (byte) meta);
 
         saveTile(pos, chunk, tag);
 
@@ -53,17 +54,16 @@ public class DefaultMoveFactory implements IMoveFactory {
             tile.writeToNBT(tileTag);
             tag.setTag("Tile", tileTag);
             chunk.removeTileEntity(pos.x & 15, pos.y, pos.z & 15);
-			return tileTag;
+            return tileTag;
         }
-		return null;
+        return null;
     }
 
     @Override
     public boolean recreateBlock(World world, BlockPos pos, NBTTagCompound tag) {
         Block block = Block.getBlockFromName(tag.getString("Block"));
 
-        if (block == null)
-            block = Blocks.air;
+        if (block == null) block = Blocks.air;
 
         int meta = tag.getByte("Meta");
 
@@ -86,12 +86,11 @@ public class DefaultMoveFactory implements IMoveFactory {
             TileEntity tile = TileEntity.createAndLoadEntity(tileTag);
             if (tile != null) {
                 chunk.addTileEntity(tile);
-				return tile;
+                return tile;
             }
         }
 
-		return null;
+        return null;
     }
-
 
 }
