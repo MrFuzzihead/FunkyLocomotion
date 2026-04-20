@@ -50,7 +50,9 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
         Tessellator tessellator = Tessellator.instance;
 
         int pass = MinecraftForgeClient.getRenderPass();
-        if (mover.render && mover.block.canRenderInPass(pass) && mover.block.getRenderType() >= 0) {
+        if (mover.render && mover.block.canRenderInPass(pass)
+            && mover.block.getRenderType() >= 0
+            && (renderBlocks != null || createCache())) {
             GL11.glPushMatrix();
 
             setupTranslations(x, y, z, mover, h, dir);
@@ -249,7 +251,16 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
     public void func_147496_a(World world) {
         this.world = world;
-        createCache();
+        // Reset cache without calling createCache() here.
+        // createCache() constructs a FakeWorldClient (extends WorldClient), which fires
+        // WorldEvent.Load. If this method is called during TileEntityRendererDispatcher
+        // func_147543_a's iteration of mapSpecialRenderers (world-change path), any
+        // ClientRegistry.bindTileEntitySpecialRenderer call triggered by that event
+        // would put() into mapSpecialRenderers mid-iteration, causing a
+        // ConcurrentModificationException. The cache is instead created lazily on the
+        // first render, outside of any mapSpecialRenderers iteration.
+        fakeWorldClient = null;
+        renderBlocks = null;
     }
 
     private boolean createCache() {
