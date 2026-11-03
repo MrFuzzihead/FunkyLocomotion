@@ -46,7 +46,8 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
         energy.readFromNBT(tag);
-        powered = tag.getBoolean("Powered");
+        // Older saves used "Powered"; current writes use "powered". Read both.
+        powered = tag.getBoolean("powered") || tag.getBoolean("Powered");
     }
 
     @Override
