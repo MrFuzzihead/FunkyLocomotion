@@ -62,9 +62,11 @@ public final class BlockStickyFrame extends BlockFrame {
         ItemStack item = player.getHeldItem();
         if (!(ItemHelper.isWrench(item))) return false;
 
-        int i = (index + world.getBlockMetadata(x, y, z)) ^ (1 << side);
+        // The server owns the block change. Mutating the client world here makes
+        // the change flicker and fires client-side World.setBlock events.
+        if (world.isRemote) return true;
 
-        if (i > 63 || i < 0) i = 0;
+        int i = (index + world.getBlockMetadata(x, y, z)) ^ (1 << side);
 
         int meta = i % 16;
         Block block = blocks[(i - meta) / 16];
