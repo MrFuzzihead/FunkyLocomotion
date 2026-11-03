@@ -61,14 +61,11 @@ public class MoveManager {
         startMoving(world, world, links, dir, maxTime);
     }
 
-    final static LinkedHashMap<String, Object> vars = new LinkedHashMap<String, Object>(10, 0.2F);
-
     @SuppressWarnings("unchecked")
-    public synchronized static void startMoving(World srcWorld, World dstWorld, List<BlockLink> links,
-        ForgeDirection dir, int maxTime) {
+    public static void startMoving(World srcWorld, World dstWorld, List<BlockLink> links, ForgeDirection dir,
+        int maxTime) {
         String section = "Start";
-
-        clearVars();
+        Map<String, Object> vars = new LinkedHashMap<String, Object>(10, 0.2F);
 
         try {
             vars.put("srcWorld", srcWorld);
@@ -399,18 +396,18 @@ public class MoveManager {
 
             section = "DoneIfWeCrashNowThenWhatTheHell";
 
-            clearVars();
+            clearVars(vars);
         } catch (Throwable err) {
             try {
-                CrashReport crashReport = buildCrashReport(section, err);
+                CrashReport crashReport = buildCrashReport(vars, section, err);
                 throw new ReportedException(crashReport);
             } finally {
-                clearVars();
+                clearVars(vars);
             }
         }
     }
 
-    private static CrashReport buildCrashReport(String section, Throwable err) {
+    private static CrashReport buildCrashReport(Map<String, Object> vars, String section, Throwable err) {
         CrashReport crashReport = CrashReport.makeCrashReport(err, "FunkyLocomotionMoveCrash");
         CrashReportCategory moveCode = crashReport.makeCategory("MoveCode");
 
@@ -425,15 +422,13 @@ public class MoveManager {
 
     private static final Object BLANK = new Object();
 
-    private static void clearVars() {
-        for (Map.Entry<String, Object> entry : vars.entrySet()) {
-            entry.setValue(BLANK);
-        }
+    private static void clearVars(Map<String, Object> vars) {
+        vars.clear();
     }
 
     public static void finishMoving() {
-        clearVars();
         String section = "start";
+        Map<String, Object> vars = new LinkedHashMap<String, Object>(10, 0.2F);
 
         List<TileMovingServer> tiles = MovingTileRegistry.getTilesFinishedMoving();
         Set<TileMovingServer> failed = new HashSet<TileMovingServer>();
@@ -554,16 +549,16 @@ public class MoveManager {
             section = "Fin";
         } catch (Throwable err) {
             try {
-                CrashReport crashReport = buildCrashReport(section, err);
+                CrashReport crashReport = buildCrashReport(vars, section, err);
                 throw new ReportedException(crashReport);
             } finally {
-                clearVars();
+                clearVars(vars);
             }
         } finally {
             for (TileMovingServer tile : tiles) {
                 if (!tile.isInvalid()) tile.finishing = false;
             }
-            clearVars();
+            clearVars(vars);
         }
     }
 
