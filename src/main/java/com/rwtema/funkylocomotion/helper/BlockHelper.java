@@ -13,7 +13,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IMoveCheck;
 import com.rwtema.funkylocomotion.api.ISlipperyBlock;
-import com.rwtema.funkylocomotion.movepermissions.MoveCheckReflector;
+import com.rwtema.funkylocomotion.movepermissions.MoveBlacklist;
+import com.rwtema.funkylocomotion.movepermissions.MoveCheckRegistry;
 
 public class BlockHelper {
 
@@ -138,18 +139,17 @@ public class BlockHelper {
         Block b = getBlock(world, pos);
         if (b == Blocks.air || b.isAir(world, pos.x, pos.y, pos.z)) return false;
 
+        if (MoveBlacklist.isBlacklisted(world, pos, b)) return false;
+
         if (b instanceof IMoveCheck) return ((IMoveCheck) b).canMove(world, pos.x, pos.y, pos.z);
 
         if (b.getBlockHardness(world, pos.x, pos.y, pos.z) < 0) return false;
 
         TileEntity tile = world.getTileEntity(pos.x, pos.y, pos.z);
 
-        if (tile != null) {
-            if (tile instanceof IMoveCheck) return ((IMoveCheck) tile).canMove(world, pos.x, pos.y, pos.z);
-            else if (!MoveCheckReflector.canMoveClass(tile.getClass())) return false;
-        }
+        if (tile instanceof IMoveCheck) return ((IMoveCheck) tile).canMove(world, pos.x, pos.y, pos.z);
 
-        return MoveCheckReflector.canMoveClass(b.getClass());
+        return !MoveCheckRegistry.preventMovement(world, pos.x, pos.y, pos.z, b, getMeta(world, pos), tile);
     }
 
     public static void breakBlockWithDrop(World world, BlockPos pos) {

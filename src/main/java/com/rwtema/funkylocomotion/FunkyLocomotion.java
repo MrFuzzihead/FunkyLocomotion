@@ -27,6 +27,7 @@ import com.rwtema.funkylocomotion.items.ItemBlockFrame;
 import com.rwtema.funkylocomotion.items.ItemBlockPusher;
 import com.rwtema.funkylocomotion.items.ItemBlockTeleporter;
 import com.rwtema.funkylocomotion.items.ItemWrench;
+import com.rwtema.funkylocomotion.movepermissions.MoveBlacklist;
 import com.rwtema.funkylocomotion.movers.MoverEventHandler;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.proxydelegates.COFHStickiness;
@@ -146,11 +147,11 @@ public class FunkyLocomotion {
         Recipes.addRecipes();
     }
 
+    @EventHandler
     public void handleIMC(FMLInterModComms.IMCEvent event) {
         for (FMLInterModComms.IMCMessage msg : event.getMessages()) {
             if ("blacklist".equals(msg.key) && msg.isStringMessage()) {
-                String s = msg.getStringValue();
-                // TODO
+                MoveBlacklist.add(msg.getStringValue());
             }
         }
     }
