@@ -79,15 +79,14 @@ public class FunkyLocomotionHarness {
 
     private void checkMovingTileSide() {
         clearArea(-2, 2, -2, 2);
-        check(
-            world.setBlock(0, Y, 2, FunkyLocomotion.moving, 0, 3),
-            "could not place the moving block");
+        check(world.setBlock(0, Y, 2, FunkyLocomotion.moving, 0, 3), "could not place the moving block");
 
         TileEntity tile = world.getTileEntity(0, Y, 2);
         check(
             tile instanceof TileMovingServer,
-            "server world created " + (tile == null ? "no tile" : tile.getClass()
-                .getName())
+            "server world created " + (tile == null ? "no tile"
+                : tile.getClass()
+                    .getName())
                 + " instead of TileMovingServer");
 
         world.setBlock(0, Y, 2, Blocks.air, 0, 2);
@@ -96,13 +95,9 @@ public class FunkyLocomotionHarness {
     private void setupPusherTest() {
         clearArea(-2, 6, -2, 2);
 
-        check(
-            world.setBlock(PUSH_X, Y, 0, FunkyLocomotion.pusher, 4, 3),
-            "could not place the pusher");
+        check(world.setBlock(PUSH_X, Y, 0, FunkyLocomotion.pusher, 4, 3), "could not place the pusher");
         for (int x = 1; x <= 3; x++) {
-            check(
-                world.setBlock(x, Y, 0, FunkyLocomotion.frame[0], 0, 3),
-                "could not place frame at x=" + x);
+            check(world.setBlock(x, Y, 0, FunkyLocomotion.frame[0], 0, 3), "could not place frame at x=" + x);
         }
 
         TileEntity tile = world.getTileEntity(PUSH_X, Y, 0);
@@ -179,9 +174,7 @@ public class FunkyLocomotionHarness {
         check(teleporterStarted, "teleporter move was not started");
         check(isFrame(TELEPORT_DST_X, Y + 1, 0), "payload did not arrive at the destination");
         check(world.isAirBlock(TELEPORT_SRC_X, Y + 1, 0), "source payload is still present");
-        check(
-            world.getBlock(TELEPORT_DST_X, Y, 0) == FunkyLocomotion.teleporter,
-            "destination teleporter was removed");
+        check(world.getBlock(TELEPORT_DST_X, Y, 0) == FunkyLocomotion.teleporter, "destination teleporter was removed");
     }
 
     private void checkPusherLimit() {
@@ -190,9 +183,7 @@ public class FunkyLocomotionHarness {
             TilePusher.maxTiles = 4;
             clearArea(38, 52, -2, 2);
 
-            check(
-                world.setBlock(40, Y, 0, FunkyLocomotion.pusher, 4, 3),
-                "could not place the limit-test pusher");
+            check(world.setBlock(40, Y, 0, FunkyLocomotion.pusher, 4, 3), "could not place the limit-test pusher");
             for (int x = 41; x <= 47; x++) {
                 check(
                     world.setBlock(x, Y, 0, FunkyLocomotion.frame[0], 0, 3),
