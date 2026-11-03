@@ -5,7 +5,7 @@
 - **Baseline:** `main` @ `6310790` (“Update build tooling and Gradle wrapper”)
 - **Scope:** `src/main/java`, `src/api/java`, `src/main/resources`, Gradle/mod metadata
 - **Focus:** Angelica (Celeritas + GL 3.3 core/GLSM) and Hodgepodge (GTNH), plus FMP, Thaumcraft, CoFH and general GTNH modpack compatibility
-- **Status:** analysis only. No gameplay code is changed in this commit.
+- **Status:** the initial P0 batch is implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for the automated coverage and in-game checklist.
 
 All line numbers refer to the baseline above. They will drift as code is refactored; use the class/method names as the stable reference.
 
@@ -27,6 +27,21 @@ All line numbers refer to the baseline above. They will drift as code is refacto
 | 10 | `WrenchFactory` copies **every** method of every discovered wrench interface into a generated class, including `<clinit>`, static/private/default methods, and computes `maxStack/maxLocals` incorrectly for `long`/`double`. Depending on the installed mod set this can produce `ClassFormatError`/`VerifyError`; default methods are silently overridden with `false/0/null`. | **P0** | Startup robustness / mod compat |
 
 Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass after one failed/empty render (`skipPass = true` before the attempt), `BlockHelper.postUpdateBlock` uses a hard-coded old light opacity of 255 (over-eager skylight recalculation), `TilePusher`’s flood fill is unbounded, and the hard CoFH energy dependency is not declared in `@Mod.dependencies`/`mcmod.info`.
+
+### Implemented in the initial P0 batch
+
+- `BlockPos.advance(int)` now delegates to `ForgeDirection`; teleporter source/destination offsets use `meta % 6` and the opposite face for all `0..11` metadata.
+- `TileMovingBase` writes/reads `"Collisions"` as a list, `"TickTime"` with the correct key/type, guards null/absent tags, and clamps light values.
+- `MessageClearTile` removes source tiles through `World.removeTileEntity` and revalidates reused raw tiles.
+- `TileMovingServer.getDescriptionPacket()` sends a deep copy of `desc`, so the live tag is not mutated while Netty serializes it.
+- `BlockMoving.createTileEntity` uses `world.isRemote` only, not the thread-name-based effective side.
+- `WrenchFactory` skips initializers/static/default/private/native/synthetic/bridge methods, emits class-file v52, and uses `COMPUTE_MAXS`.
+- `BlockSlider`’s render side is a `ThreadLocal`, not a plain static; the renderer restores it (and `renderAllFaces`) in a `finally`.
+- `TileEntityRenderMoving` retries a block render that returns `false`, instead of permanently skipping that pass.
+- `TilePusher` caps the BFS at `maxTiles`, clamps config values, and protects energy capacity/cost from `int` overflow; teleporters/boosters use the same math.
+- The copied CoFH/Thaumcraft API stubs in `src/api` were replaced with `devOnlyNonPublishable` dependencies.
+
+Each item has a focused JUnit regression test where the behaviour is reachable without a live world; see [`TESTING.md`](TESTING.md).
 
 ---
 

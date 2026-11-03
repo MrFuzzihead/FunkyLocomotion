@@ -1,0 +1,211 @@
+# Testing Funky Locomotion (P0 fixes)
+
+This document covers the automated tests added with the first batch of P0 fixes,
+what they do and do not prove, and the in-game checks that still need a real
+Minecraft/Angelica/Hodgepodge client or dedicated server.
+
+## Running the automated tests
+
+```bash
+./gradlew test
+```
+
+Useful variants:
+
+```bash
+# one class
+./gradlew test --tests com.rwtema.funkylocomotion.blocks.TileMovingBaseNbtTest
+
+# one method
+./gradlew test --tests 'com.rwtema.funkylocomotion.blocks.TileMovingBaseNbtTest.roundTripsCollisionBoxesAndScheduledTicks'
+
+# full build (compile + tests + jar)
+./gradlew build
+```
+
+The HTML report is written to:
+
+```
+build/reports/tests/test/index.html
+```
+
+The test source set is a normal JUnit 4 source set. It compiles against the
+RetroFuturagradle `patchedMc` output, so it can use Minecraft classes such as
+`NBTTagCompound`, `AxisAlignedBB`, `ForgeDirection`, `S35PacketUpdateTileEntity`
+and `ByteBuf` without launching a client or a server.
+
+## What is covered automatically
+
+| Test | Covers |
+|---|---|
+| `SmokeTest` | The JUnit/RFG test harness itself. |
+| `BlockPosTest` | `BlockPos.advance(int)` maps `0..5` through `ForgeDirection`; `6`, `7` and out-of-range values are no-ops instead of indexing `Facing` arrays. |
+| `TileTeleportTest` | `TileTeleport.getTeleportFacing(int)` for all metadata `0..11`; destination offsets for every source/destination metadata pair, including puller metadata. This is the regression test for the `ArrayIndexOutOfBoundsException`. |
+| `TileMovingBaseNbtTest` | NBT round-trip of `block`/`desc`, time/maxTime/dir, collision boxes, scheduled tick time/priority, light values; missing keys; clamping; the old `"TimeTime"` typo is not treated as `"TickTime"`. |
+| `TileMovingServerDescriptionTest` | `getDescriptionPacket()` clones the live `desc` tag, does not mutate it, and two packets keep independent snapshots; a null description still returns no packet. |
+| `MessageClearTileTest` | Packet coordinate round-trip, including negative and large values. |
+| `BlockMovingSideTest` | Server-side truck creation returns `TileMovingServer`, independent of thread names. |
+| `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
+| `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
+| `MoverRenderResultTest` | A failed block render is retried next frame; a successful empty render is skipped; a successful render with geometry is cached. |
+| `TilePusherLimitsTest` | Config clamping, energy capacity/cost overflow protection, and the inclusive BFS block limit. |
+
+### What the headless tests cannot prove
+
+The unit tests deliberately do not bootstrap Forge, a `WorldServer`/`WorldClient`,
+chunks, the block/tile registries, the network pipeline, or the OpenGL renderer.
+They therefore cannot catch:
+
+- real `World`/`Chunk` lifecycle problems (unloaded chunks, world changes,
+  save/reload, dimension travel);
+- actual S35 serialization on the Netty thread under load;
+- Angelica worker-thread meshing and Celeritas chunk rebuilding;
+- Hodgepodge's S35 batching, GL-state fixes, or `fixPreserveQuadOrder`;
+- TESR behaviour, texture reloads, shaders, or GL state leakage;
+- packet ordering/loss and client/server desync.
+
+Those require the in-game checklist below.
+
+## In-game validation checklist for this P0 batch
+
+Run at least a dedicated server + client, a client with Angelica, and a client
+with Hodgepodge (the GTNH default config). For the full matrix see
+[`AUDIT.md`](AUDIT.md) §13.
+
+### 1. Teleporter metadata (`BlockPos.advance` / `TileTeleport`)
+
+- [ ] Place a **puller** teleporter with metadata `6..11` (world edit, NBT,
+      command, or item variant) and activate it. No `ArrayIndexOutOfBoundsException`
+      in the server log.
+- [ ] Push teleporter, same dimension: structure arrives at the corresponding
+      offset behind the destination teleporter.
+- [ ] Pull teleporter, same dimension: no crash and the destination offset is
+      consistent with the face the teleporter looks at.
+- [ ] Cross-dimension teleport: source blocks become air, destination blocks
+      appear, no updates/lighting at the source coordinates in the destination
+      dimension (see the separate cross-world fix checklist).
+- [ ] All six facings for both push and pull metadata (`0..11`).
+
+### 2. Mover NBT round-trip (`TileMovingBase`)
+
+- [ ] Start a move over a platform/chest, save and quit **mid-move**, restart.
+      Collision boxes are restored (entities do not fall through), and the move
+      completes or can be recovered.
+- [ ] Chunk unload/reload mid-move (move the player away and back). Collision
+      boxes and scheduled ticks survive.
+- [ ] Move a block with a scheduled tick (flowing water, a mod machine) and
+      verify the tick resumes after the move/reload.
+- [ ] A mover with no `Collisions` tag (old world/creative placement) loads
+      without an exception and remains pass-through only when it has no boxes.
+- [ ] Light level/opacity of the moved block matches the original after reload
+      (glowstone still lights, glass still transmits).
+
+### 3. Client source tile cleanup (`MessageClearTile`)
+
+- [ ] Move a chest with items. Open the chest GUI during the move; it closes
+      instead of staying open on a destroyed tile.
+- [ ] Move a sign, skull, flower pot, beacon, mob spawner and a mod TESR block.
+      No ghost/invalid tile entity remains at the source; `F3` chunk/TE counts do
+      not grow after repeated moves.
+- [ ] Move the same block back and forth several times; the reused tile still
+      renders and does not tick at the old position.
+- [ ] Move a block at a position that was previously used in another dimension;
+      no stale tile from the other dimension is reused (until the dimension-aware
+      cache fix lands, verify this does not happen in normal play).
+
+### 4. S35 description snapshot (`TileMovingServer`)
+
+- [ ] Move a large frame (hundreds of blocks) with Hodgepodge default config.
+      No `ConcurrentModificationException`, `IllegalStateException` or corrupted
+      NBT in the client/server log.
+- [ ] Watch a mover for several seconds: time/direction/light progress smoothly;
+      no flicker between two ticks.
+- [ ] Move a block with collision boxes and a light value; the client receives
+      the correct boxes/light in the first description packet.
+- [ ] With Hodgepodge `batchDescriptionPacketsCode=true` (if enabled in the
+      pack), repeat the large-frame test.
+
+### 5. Logical side (`BlockMoving.createTileEntity`)
+
+- [ ] Dedicated server: place a moving block through `/setblock`, a world edit,
+      a command, or a chunk-generation path (not the normal pusher path). No
+      `ClassCastException` (`TileMovingClient` cast to `TileMovingServer`).
+- [ ] Integrated server: normal pusher/slider/teleporter moves still create
+      server movers and render client movers.
+- [ ] A server-side thread other than `"Server thread"` (e.g. a mod's worldgen
+      worker) that creates the block still gets a server tile.
+
+### 6. Wrench bytecode generation (`WrenchFactory`)
+
+- [ ] Start a dev client with BuildCraft, CoFH, MFR, AE2 and EnderIO APIs
+      present. The wrench is created and implements the expected interfaces.
+- [ ] Remove one optional API jar and start again. No `ClassFormatError`,
+      `VerifyError`, or startup crash; the wrench still works for the remaining
+      APIs.
+- [ ] An interface with a `default` method keeps the default implementation
+      (the generated wrench must not return `false/0/null` for it).
+- [ ] Test right-click/left-click wrench behaviour on frames, pushers, sliders,
+      teleporters and a vanilla block.
+
+### 7. Slider rendering under threaded meshing (`BlockSlider`)
+
+- [ ] Angelica + GTNH: place two sliders with different arrow directions in
+      different chunk sections so they mesh concurrently (fly between them or
+      use a high render distance). The arrow faces are on the correct sides; no
+      face is culled because another worker set a different `renderSide`.
+- [ ] Rotate a slider with the wrench (sneak and non-sneak) and verify the
+      arrow/front faces update after a block update.
+- [ ] Resource reload (`F3+T`) while looking at sliders; no stale/missing faces.
+- [ ] Sliders in the inventory render with the correct front/arrow textures.
+
+### 8. Render retry (`TileEntityRenderMoving`)
+
+- [ ] Join a world with an active mover; the block is visible on the first
+      frame after its S35 arrives, even if the first render attempt is not ready.
+- [ ] Move a block whose ISBRH/TESR requires its world/data (e.g. a mod machine
+      or a connected block). It appears after the data is ready instead of staying
+      invisible for the mover's lifetime.
+- [ ] Cause a renderer exception (dev build or a known-bad optional block); the
+      error crate is shown, the error is logged once, and other movers continue
+      rendering.
+- [ ] `F3+T` while a mover is active: render caches are rebuilt and the block
+      remains visible.
+
+### 9. Pusher limits (`TilePusher`)
+
+- [ ] Build a sticky structure larger than the configured
+      `maximumBlocksPushed` (default 1024, max 8192). Activating the pusher
+      returns without a multi-second freeze or OOM; the move is rejected.
+- [ ] Set `maximumBlocksPushed=0` or a negative value in the config; it is
+      clamped to `1`, not an instant rejection/exception.
+- [ ] Set `maximumBlocksPushed` very high and `energyPerBlock` very high; the
+      energy storage does not overflow to a negative capacity and the pusher
+      behaves predictably.
+- [ ] Move exactly the configured limit (accepted) and one block over the limit
+      (rejected).
+- [ ] Teleporter and booster paths use the same limit/energy calculations.
+
+### 10. API source cleanup (`src/api`)
+
+- [ ] The built jar does **not** contain `cofh/api/**` or `thaumcraft/api/**`
+      classes. It still contains `com/rwtema/funkylocomotion/api/**`.
+- [ ] Run without CoFHCore: placing/loading a pusher/booster is the known hard
+      dependency case; no `NoClassDefFoundError` from an unrelated class.
+- [ ] Run without Thaumcraft: startup is clean and node moving is simply not
+      registered.
+- [ ] Run with GTNH Thaumcraft and CoFHCore: node moves, COFH facade stickiness
+      and the wrench still work.
+- [ ] `./gradlew build` succeeds from a clean checkout (the new Thaumcraft
+      `dev` dependency is resolvable from the configured repositories).
+
+## Regression commands before merging the branch
+
+```bash
+./gradlew clean test
+./gradlew build
+git status --short
+```
+
+For the complete long-term matrix (vanilla, Angelica only, Hodgepodge only,
+Angelica + Hodgepodge, shaders, Java 8/17/21, LAN/dedicated server), use
+[`AUDIT.md`](AUDIT.md) §13.
