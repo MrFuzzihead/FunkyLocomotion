@@ -52,8 +52,7 @@ public class EntityMovingEventHandler {
     public void move(TickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
 
-        getMovementMap(event.side)
-            .clear();
+        getMovementMap(event.side).clear();
     }
 
 }
