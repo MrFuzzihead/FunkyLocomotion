@@ -1,7 +1,8 @@
 # Funky Locomotion API
 
 The public API lives in `com.rwtema.funkylocomotion.api`. The stable convenience
-entry point is `FunkyLocomotionAPI`.
+entry point is `FunkyLocomotionAPI`. The mod also exposes a Forge config GUI
+(Mods → Funky Locomotion → Config) and the `/funkylocomotion reload` command.
 
 ```java
 FunkyLocomotionAPI.registerMoveFactory(Block block, IMoveFactory factory);
