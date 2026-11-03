@@ -7,6 +7,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.stats.StatList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Facing;
@@ -14,7 +15,9 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
+import com.rwtema.funkylocomotion.FunkyLocomotion;
 import com.rwtema.funkylocomotion.items.ItemBlockTeleporter;
+import com.rwtema.funkylocomotion.items.ItemWrench;
 
 public class BlockTeleport extends BlockPusher {
 
@@ -53,6 +56,42 @@ public class BlockTeleport extends BlockPusher {
     @Override
     public TileEntity createTileEntity(World world, int metadata) {
         return new TileTeleport();
+    }
+
+    @Override
+    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+        float hitY, float hitZ) {
+        if (world.isRemote) return true;
+
+        ItemStack held = player.getHeldItem();
+        if (held == null || held.getItem() != FunkyLocomotion.wrench
+            || held.getItemDamage() != ItemWrench.metaWrenchEye) {
+            return super.onBlockActivated(world, x, y, z, player, side, hitX, hitY, hitZ);
+        }
+
+        TileEntity tile = world.getTileEntity(x, y, z);
+        if (!(tile instanceof TileTeleport)) return super.onBlockActivated(world, x, y, z, player, side, hitX, hitY, hitZ);
+
+        TileTeleport teleporter = (TileTeleport) tile;
+        NBTTagCompound tag = held.getTagCompound();
+        if (tag == null || !tag.hasKey(ItemWrench.NBT_TELEPORT_ID)) {
+            int id = teleporter.teleportId;
+            if (id == 0) {
+                player.addChatComponentMessage(new ChatComponentTranslation("frame.teleport.no_id.0"));
+                return true;
+            }
+
+            if (tag == null) tag = new NBTTagCompound();
+            tag.setInteger(ItemWrench.NBT_TELEPORT_ID, id);
+            held.setTagCompound(tag);
+            player.addChatComponentMessage(new ChatComponentTranslation("frame.teleport.pair.pick", id));
+            return true;
+        }
+
+        int id = tag.getInteger(ItemWrench.NBT_TELEPORT_ID);
+        teleporter.setTeleportId(id);
+        player.addChatComponentMessage(new ChatComponentTranslation("frame.teleport.pair.apply", id));
+        return true;
     }
 
     @Override

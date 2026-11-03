@@ -30,6 +30,7 @@ public class ItemWrench extends Item {
     public static final int metaWrenchNormal = 0;
     public static final int metaWrenchEye = 1;
     public static final int metaWrenchHammer = 2;
+    public static final String NBT_TELEPORT_ID = "FLTeleportID";
 
     public ItemWrench() {
         super();

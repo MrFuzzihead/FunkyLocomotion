@@ -157,6 +157,21 @@ public class TileTeleport extends TilePusher {
             MoveSourceHelper.moveTime(boosters.size()) * 2);
     }
 
+    public void setTeleportId(int id) {
+        if (teleportId == id) return;
+
+        unCache();
+        teleportId = id;
+        if (worldObj != null && !worldObj.isRemote) {
+            validate();
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+        }
+    }
+
+    public int getTeleportId() {
+        return teleportId;
+    }
+
     @Override
     public void invalidate() {
         super.invalidate();

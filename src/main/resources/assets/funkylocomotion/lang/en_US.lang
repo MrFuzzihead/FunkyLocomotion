@@ -24,3 +24,5 @@ tile.funkylocomotion:pusher.6.name=Frame Puller
 tile.funkylocomotion:slider.name=Frame Slider
 tile.funkylocomotion:booster.name=Frame Booster
 tile.funkylocomotion:teleporter.name=Frame Teleporter
+frame.teleport.pair.pick=Picked up teleporter ID %s
+frame.teleport.pair.apply=Applied teleporter ID %s
