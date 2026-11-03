@@ -46,6 +46,22 @@ public class ProxyClient extends Proxy {
         AngelicaCompat.registerDynamicTileEntityBounds();
 
         FakeWorldClient.register();
+        reloadClientConfig();
+    }
+
+    @Override
+    public void reloadClientConfig() {
+        TileMovingClient.renderBlackList.clear();
+        for (String className : FunkyLocomotion.renderBlacklist) {
+            if (className == null || className.trim()
+                .isEmpty()) continue;
+            try {
+                Class<?> clazz = Class.forName(className.trim(), false, ProxyClient.class.getClassLoader());
+                TileMovingClient.renderBlackList.add(clazz);
+            } catch (ClassNotFoundException | LinkageError ignored) {
+                // Configured class is not installed; nothing to blacklist.
+            }
+        }
     }
 
     @Override

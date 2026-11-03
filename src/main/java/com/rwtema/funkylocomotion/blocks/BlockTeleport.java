@@ -7,9 +7,9 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.stats.StatList;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.Facing;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.MovingObjectPosition;
@@ -70,7 +70,8 @@ public class BlockTeleport extends BlockPusher {
         }
 
         TileEntity tile = world.getTileEntity(x, y, z);
-        if (!(tile instanceof TileTeleport)) return super.onBlockActivated(world, x, y, z, player, side, hitX, hitY, hitZ);
+        if (!(tile instanceof TileTeleport))
+            return super.onBlockActivated(world, x, y, z, player, side, hitX, hitY, hitZ);
 
         TileTeleport teleporter = (TileTeleport) tile;
         NBTTagCompound tag = held.getTagCompound();

@@ -20,4 +20,8 @@ public class Proxy {
     public void sendUsePacket(int x, int y, int z, int face, ItemStack item, float hitX, float hitY, float hitZ) {
 
     }
+
+    public void reloadClientConfig() {
+
+    }
 }

@@ -4,6 +4,8 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.config.Configuration;
 
 import com.rwtema.funkylocomotion.asm.WrenchFactory;
@@ -18,6 +20,7 @@ import com.rwtema.funkylocomotion.blocks.TileMovingServer;
 import com.rwtema.funkylocomotion.blocks.TilePusher;
 import com.rwtema.funkylocomotion.blocks.TileSlider;
 import com.rwtema.funkylocomotion.blocks.TileTeleport;
+import com.rwtema.funkylocomotion.command.CommandFunkyLocomotion;
 import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.dispenser.FrameDispenserAcion;
 import com.rwtema.funkylocomotion.dispenser.WrenchDispenserAction;
@@ -43,6 +46,7 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLInterModComms;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 @Mod(
@@ -67,13 +71,15 @@ public class FunkyLocomotion {
     public static BlockSlider slider;
     public static BlockBooster booster;
     public static BlockTeleport teleporter;
+    public static String[] renderBlacklist = new String[0];
+    private static Configuration config;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         LogHelper.info("Let's Move!");
         FLNetwork.init();
 
-        Configuration config = new Configuration(event.getSuggestedConfigurationFile());
+        config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
         TilePusher.maxTiles = TilePusher.clampConfig(
             config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
@@ -90,6 +96,11 @@ public class FunkyLocomotion {
         Recipes.shouldAddFrameCopyResetRecipes = config
             .get(Configuration.CATEGORY_GENERAL, "addFrameCopyResetRecipes", true)
             .getBoolean(true);
+        renderBlacklist = config.getStringList(
+            "renderBlacklist",
+            "client",
+            new String[0],
+            "Tile entity class names that should never be rendered by a mover");
         if (config.hasChanged()) config.save();
 
         EntityMovingEventHandler.init();
@@ -156,6 +167,54 @@ public class FunkyLocomotion {
     @EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         Recipes.addRecipes();
+    }
+
+    @EventHandler
+    public void serverStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new CommandFunkyLocomotion());
+    }
+
+    public static void reloadConfig() {
+        if (config == null) return;
+
+        config.load();
+        TilePusher.maxTiles = TilePusher.clampConfig(
+            config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
+                .getInt(1024),
+            TilePusher.MIN_MAX_TILES,
+            TilePusher.MAX_MAX_TILES);
+        TilePusher.powerPerTile = TilePusher.clampConfig(
+            config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250)
+                .getInt(250),
+            TilePusher.MIN_POWER_PER_TILE,
+            TilePusher.MAX_POWER_PER_TILE);
+        renderBlacklist = config.getStringList(
+            "renderBlacklist",
+            "client",
+            new String[0],
+            "Tile entity class names that should never be rendered by a mover");
+
+        int capacity = TilePusher.energyCapacity(TilePusher.maxTiles, TilePusher.powerPerTile);
+        MinecraftServer server = MinecraftServer.getServer();
+        if (server != null) {
+            for (WorldServer world : server.worldServers) {
+                if (world == null || world.loadedTileEntityList == null) continue;
+                for (Object object : world.loadedTileEntityList) {
+                    if (object instanceof TilePusher) {
+                        TilePusher pusher = (TilePusher) object;
+                        pusher.energy.setCapacity(capacity);
+                        if (pusher.energy.getEnergyStored() > capacity) pusher.energy.setEnergyStored(capacity);
+                    } else if (object instanceof TileBooster) {
+                        TileBooster booster = (TileBooster) object;
+                        booster.energy.setCapacity(capacity);
+                        if (booster.energy.getEnergyStored() > capacity) booster.energy.setEnergyStored(capacity);
+                    }
+                }
+            }
+        }
+
+        proxy.reloadClientConfig();
+        if (config.hasChanged()) config.save();
     }
 
     @EventHandler

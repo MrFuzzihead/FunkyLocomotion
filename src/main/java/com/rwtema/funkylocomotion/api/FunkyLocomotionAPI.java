@@ -23,12 +23,14 @@ public final class FunkyLocomotionAPI {
     }
 
     public static void registerMoveFactory(Class<? extends Block> blockClass, IMoveFactory factory) {
-        if (blockClass == null || factory == null) throw new IllegalArgumentException("block class and factory are required");
+        if (blockClass == null || factory == null)
+            throw new IllegalArgumentException("block class and factory are required");
         FactoryRegistry.moveFactoryMapBlockClass.put(blockClass, factory);
     }
 
     public static void registerMoveFactoryForTile(Class<? extends TileEntity> tileClass, IMoveFactory factory) {
-        if (tileClass == null || factory == null) throw new IllegalArgumentException("tile class and factory are required");
+        if (tileClass == null || factory == null)
+            throw new IllegalArgumentException("tile class and factory are required");
         FactoryRegistry.moveFactoryMapInheritanceClass.put(tileClass, factory);
     }
 
