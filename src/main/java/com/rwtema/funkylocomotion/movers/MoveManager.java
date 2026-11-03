@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import gnu.trove.map.hash.TLongObjectHashMap;
-
 import net.minecraft.block.Block;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
@@ -42,6 +40,8 @@ import com.rwtema.funkylocomotion.factory.FactoryRegistry;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.network.MessageClearTile;
+
+import gnu.trove.map.hash.TLongObjectHashMap;
 
 public class MoveManager {
 
