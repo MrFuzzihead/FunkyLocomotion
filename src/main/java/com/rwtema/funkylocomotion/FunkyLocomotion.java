@@ -64,7 +64,6 @@ public class FunkyLocomotion {
     public static BlockSlider slider;
     public static BlockBooster booster;
     public static BlockTeleport teleporter;
-    public static boolean redrawChunksInstantly;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -87,8 +86,6 @@ public class FunkyLocomotion {
             .getBoolean(true);
         Recipes.shouldAddFrameCopyResetRecipes = config
             .get(Configuration.CATEGORY_GENERAL, "addFrameCopyResetRecipes", true)
-            .getBoolean(true);
-        redrawChunksInstantly = config.get("client", "redrawChunksInstantly", true)
             .getBoolean(true);
         if (config.hasChanged()) config.save();
 

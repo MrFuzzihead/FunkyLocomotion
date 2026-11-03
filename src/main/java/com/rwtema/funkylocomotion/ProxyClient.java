@@ -7,9 +7,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
 
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
+import com.rwtema.funkylocomotion.compat.AngelicaCompat;
 import com.rwtema.funkylocomotion.eventhandler.ClientTimer;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
-import com.rwtema.funkylocomotion.rendering.ChunkRerenderer;
 import com.rwtema.funkylocomotion.rendering.RenderBlockPusher;
 import com.rwtema.funkylocomotion.rendering.RenderBlockSlider;
 import com.rwtema.funkylocomotion.rendering.RenderItemWrench;
@@ -36,9 +36,11 @@ public class ProxyClient extends Proxy {
         FMLCommonHandler.instance()
             .bus()
             .register(new ClientTimer());
-        FMLCommonHandler.instance()
-            .bus()
-            .register(new ChunkRerenderer());
+
+        // Angelica classifies tile entity render bounds on worker threads during
+        // chunk meshing. Register before any world is loaded so it never calls
+        // TileMovingClient.getRenderBoundingBox() off the client thread.
+        AngelicaCompat.registerDynamicTileEntityBounds();
 
         FakeWorldClient.register();
     }
