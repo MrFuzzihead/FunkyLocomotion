@@ -17,11 +17,17 @@ public class DescriptorRegistry {
         register(new DescribeVanillaSign(), false);
     }
 
-    public static void register(IDescriptionProxy d, boolean priority) {
+    /**
+     * @param fallback {@code true} to append this descriptor as a low-priority
+     *                 fallback, {@code false} to give it high priority. The old
+     *                 parameter was named {@code priority}, but behaved as the
+     *                 opposite of what most callers expected.
+     */
+    public static void register(IDescriptionProxy d, boolean fallback) {
         if (proxyMap.containsKey(d.getID())) throw new RuntimeException(d.getID() + " already registered");
 
         proxyMap.put(d.getID(), d);
-        if (priority || proxyList.isEmpty()) proxyList.add(d);
+        if (fallback || proxyList.isEmpty()) proxyList.add(d);
         else proxyList.add(0, d);
     }
 
@@ -30,7 +36,8 @@ public class DescriptorRegistry {
     }
 
     public static IDescriptionProxy getDescriptor(String s) {
-        return proxyMap.get(s);
+        IDescriptionProxy descriptor = proxyMap.get(s == null ? "" : s);
+        return descriptor != null ? descriptor : proxyMap.get("");
     }
 
 }

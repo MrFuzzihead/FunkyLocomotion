@@ -177,7 +177,7 @@ public class MoveManager {
                     for (IDescriptionProxy d : DescriptorRegistry.getProxyList()) {
                         if (d.canHandleTile(tile)) {
                             d.addDescriptionToTags(descriptor, tile);
-                            if (!"DescID".isEmpty()) descriptor.setString("DescID", d.getID());
+                            if (!d.getID().isEmpty()) descriptor.setString("DescID", d.getID());
                             flag = true;
                             break;
                         }
