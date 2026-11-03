@@ -1,5 +1,6 @@
 package com.rwtema.funkylocomotion;
 
+import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPED;
 import static net.minecraftforge.oredict.RecipeSorter.Category.SHAPELESS;
 
 import java.util.ArrayList;
@@ -25,13 +26,9 @@ public class Recipes {
     public static boolean shouldAddFrameCopyResetRecipes;
 
     public static void addRecipes() {
-        for (String s : OreDictionary.getOreNames()) {
-            if (s.startsWith("ingot")) LogHelper.info(s);
-        }
-
         if (shouldAddRecipes) {
             Object lapis = "gemLapis";
-            Object gearEnderium = getOreWithVanillaFallback(Blocks.piston, "thermalexpansion:machineFrame");
+            Object gearEnderium = getOreWithVanillaFallback(Blocks.piston, "machineFrame", "frameMachine");
             Object diamond = "gemDiamond";
             Object nuggetSignalum = getOreWithVanillaFallback("dustRedstone", "nuggetSignalum");
             Object ingotInvar = getOreWithVanillaFallback(Blocks.heavy_weighted_pressure_plate, "ingotInvar");
@@ -198,6 +195,11 @@ public class Recipes {
 
     public static void addCustomRecipe(IRecipe recipe) {
         GameRegistry.addRecipe(recipe);
-        RecipeSorter.register("funky:recipe", recipe.getClass(), SHAPELESS, "");
+        RecipeSorter.register(
+            "funky:" + recipe.getClass()
+                .getName(),
+            recipe.getClass(),
+            recipe instanceof ShapedOreRecipe ? SHAPED : SHAPELESS,
+            "");
     }
 }
