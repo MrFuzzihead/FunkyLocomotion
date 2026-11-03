@@ -5,7 +5,7 @@
 - **Baseline:** `main` @ `6310790` (“Update build tooling and Gradle wrapper”)
 - **Scope:** `src/main/java`, `src/api/java`, `src/main/resources`, Gradle/mod metadata
 - **Focus:** Angelica (Celeritas + GL 3.3 core/GLSM) and Hodgepodge (GTNH), plus FMP, Thaumcraft, CoFH and general GTNH modpack compatibility
-- **Status:** the P0 and initial P1 batches are implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
+- **Status:** the P0 and P1 batches are implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
 
 All line numbers refer to the baseline above. They will drift as code is refactored; use the class/method names as the stable reference.
 
@@ -51,10 +51,12 @@ Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass af
 - The slider, frame, wrench and moving-block paths no longer mutate client worlds or duplicate collision/particle state; the `_Immovable` typo has a corrected alias.
 - Descriptor fallback/`DescID` handling, teleporter cache cleanup, mover tick-phase handling, pusher power NBT, the logger name/format, and the CoFH dependency declaration were corrected.
 - `EntityMovingEventHandler` now delegates to vanilla `Entity.moveEntity` instead of a divergent copy, and clears its movement map only on the END tick phase.
+- Block snapshots now use `MoveSnapshot`: a shared versioned reader/writer with registry-name + numeric-id fallback and legacy numeric/string compatibility for both server move data and client descriptions.
+- `MoveManager` uses a per-move crash context map instead of a shared static map, and `startMoving` is no longer globally synchronized.
 
 Each item has a focused JUnit regression test where the behaviour is reachable without a live world. A real dedicated server harness (`./gradlew runServer -PflHarness=true`) covers the world/chunk/move paths; see [`TESTING.md`](TESTING.md).
 
-Remaining P1/P2 work includes `MoveManager`'s static crash context/global synchronization, versioned snapshot formats with legacy readers, FMP describer registration, silent-write `onBlockAdded`/bounds handling, and `breakBlockWithDrop` tool/notification semantics.
+Remaining work is P2: FMP describer registration, silent-write `onBlockAdded`/bounds handling, `breakBlockWithDrop` tool/notification semantics, TESR cache invalidation, and the other rendering/API cleanup items below.
 
 ---
 

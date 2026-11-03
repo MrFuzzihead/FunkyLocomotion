@@ -51,6 +51,7 @@ and `ByteBuf` without launching a client or a server.
 | `TilePusherNbtTest` | Pusher power state is restored from both the current `powered` key and the legacy `Powered` key. |
 | `TileCacheKeyTest` | Client tile-cache keys include the dimension as well as coordinates. |
 | `DescriptorRegistryTest` | Missing/unknown description ids fall back to the vanilla descriptor. |
+| `MoveSnapshotTest` | Registry-name/meta round-trip, legacy numeric block ids, `BlockId` fallback, and unknown/missing blocks falling back to air. |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
@@ -265,6 +266,10 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
 
 - [ ] Move a vanilla chest, a sign, and a mod TESR block. Vanilla/sign
       descriptions still render; mod descriptors still use their custom format.
+- [ ] Load a move saved by the previous build (numeric/legacy block tag) and
+      finish it; the block is restored, not replaced by air.
+- [ ] Mix old and new descriptions in one move (a legacy numeric block and a
+      registry-name block) and verify both render.
 - [ ] Move blocks back and forth between dimensions; no tile from the previous
       dimension is reused at the same coordinates.
 - [ ] Move the same block repeatedly; no ghost tile entity remains and the cache
