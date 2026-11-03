@@ -33,6 +33,7 @@ Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass af
 - `BlockPos.advance(int)` now delegates to `ForgeDirection`; teleporter source/destination offsets use `meta % 6` and the opposite face for all `0..11` metadata.
 - `TileMovingBase` writes/reads `"Collisions"` as a list, `"TickTime"` with the correct key/type, guards null/absent tags, and clamps light values.
 - `MessageClearTile` removes source tiles through `World.removeTileEntity` and revalidates reused raw tiles.
+- `MoveManager` posts source-block updates to `srcWorld` instead of `dstWorld` for cross-dimension teleports.
 - `TileMovingServer.getDescriptionPacket()` sends a deep copy of `desc`, so the live tag is not mutated while Netty serializes it.
 - `BlockMoving.createTileEntity` uses `world.isRemote` only, not the thread-name-based effective side.
 - `WrenchFactory` skips initializers/static/default/private/native/synthetic/bridge methods, emits class-file v52, and uses `COMPUTE_MAXS`.
