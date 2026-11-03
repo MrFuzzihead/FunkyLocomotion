@@ -42,6 +42,7 @@ and `ByteBuf` without launching a client or a server.
 | `BlockPosTest` | `BlockPos.advance(int)` maps `0..5` through `ForgeDirection`; `6`, `7` and out-of-range values are no-ops instead of indexing `Facing` arrays. |
 | `TileTeleportTest` | `TileTeleport.getTeleportFacing(int)` for all metadata `0..11`; destination offsets for every source/destination metadata pair, including puller metadata. This is the regression test for the `ArrayIndexOutOfBoundsException`. |
 | `TileMovingBaseNbtTest` | NBT round-trip of `block`/`desc`, time/maxTime/dir, collision boxes, scheduled tick time/priority, light values; missing keys; clamping; the old `"TimeTime"` typo is not treated as `"TickTime"`. |
+| `TileMovingProgressTest` | Zero-duration movers do not produce NaN/Infinity in progress/offset/movement vectors. |
 | `TileMovingServerDescriptionTest` | `getDescriptionPacket()` clones the live `desc` tag, does not mutate it, and two packets keep independent snapshots; a null description still returns no packet. |
 | `MessageClearTileTest` | Packet coordinate round-trip, including negative and large values. |
 | `MessageClearTileHandlerTest` | The client handler removes the source tile through `World.removeTileEntity` and drops it from `loadedTileEntityList`. |
@@ -49,6 +50,8 @@ and `ByteBuf` without launching a client or a server.
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
+| `MoveCheckReflectorTest` | Static `_Immovable()` markers prevent movement; classes without the marker remain movable. |
+| `AngelicaCompatTest` | Angelica bounds registration fails silently when Angelica is absent. |
 | `TilePusherLimitsTest` | Config clamping, energy capacity/cost overflow protection, and the inclusive BFS block limit. |
 
 ### What the headless tests cannot prove
@@ -67,11 +70,52 @@ They therefore cannot catch:
 
 Those require the in-game checklist below.
 
+## Headless dedicated-server harness
+
+The JUnit tests stop at Minecraft class boundaries. The repository also has a
+test-only dedicated-server harness that boots a real Forge server, a `WorldServer`,
+chunks, real tile entities and the move manager's tick lifecycle:
+
+```bash
+./gradlew runServer -PflHarness=true
+```
+
+The first run creates `run/server/eula.txt` and a flat-world
+`run/server/server.properties` automatically. The harness source set lives in
+`src/harness/java` and is **not** part of the mod jar; it is only added to the
+server classpath when `-PflHarness=true` is set.
+
+What it verifies:
+
+- FML dedicated-server startup with the normal dev runtime (CoFH, FMP,
+  CodeChickenCore) and without client-only classes on the server;
+- `BlockMoving.createTileEntity` creates a `TileMovingServer` in a real
+  `WorldServer`;
+- a pusher performs a real 3-block frame move over 20 ticks, including
+  `MoveManager` finish/cleanup and block placement;
+- a **puller teleporter** with metadata `6` performs a real move through the
+  teleporter cache and `MoveManager` (the old `advance(meta ^ 1)` path would
+  throw `ArrayIndexOutOfBoundsException`);
+- a structure larger than `TilePusher.maxTiles` is rejected by the real BFS;
+- the server log is free of `NoClassDefFoundError`, `ClassCastException`,
+  `ConcurrentModificationException` and `ArrayIndexOutOfBoundsException` during
+  these operations.
+
+A pass prints `[FL-HARNESS] PASS` and shuts the server down. A failure prints
+`[FL-HARNESS] FAIL: ...` and exits non-zero. If your Gradle configuration cache
+warns about the harness preparation task, add `--no-configuration-cache`; the
+harness result is unchanged.
+
+The harness does **not** verify client rendering, Angelica worker-thread
+meshing, Hodgepodge packet batching, shaders, or actual S35 delivery. Those are
+covered by the in-game checklist below.
+
 ## In-game validation checklist for this P0 batch
 
 Run at least a dedicated server + client, a client with Angelica, and a client
-with Hodgepodge (the GTNH default config). For the full matrix see
-[`AUDIT.md`](AUDIT.md) §13.
+with Hodgepodge (the GTNH default config). Start with the automated
+`runServer -PflHarness=true` smoke test above, then cover the following in-game
+checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
 
 ### 1. Teleporter metadata (`BlockPos.advance` / `TileTeleport`)
 

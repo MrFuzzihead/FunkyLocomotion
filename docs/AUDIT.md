@@ -5,7 +5,7 @@
 - **Baseline:** `main` @ `6310790` (“Update build tooling and Gradle wrapper”)
 - **Scope:** `src/main/java`, `src/api/java`, `src/main/resources`, Gradle/mod metadata
 - **Focus:** Angelica (Celeritas + GL 3.3 core/GLSM) and Hodgepodge (GTNH), plus FMP, Thaumcraft, CoFH and general GTNH modpack compatibility
-- **Status:** the initial P0 batch is implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for the automated coverage and in-game checklist.
+- **Status:** the P0 batch is implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
 
 All line numbers refer to the baseline above. They will drift as code is refactored; use the class/method names as the stable reference.
 
@@ -40,9 +40,12 @@ Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass af
 - `BlockSlider`’s render side is a `ThreadLocal`, not a plain static; the renderer restores it (and `renderAllFaces`) in a `finally`.
 - `TileEntityRenderMoving` retries a block render that returns `false`, instead of permanently skipping that pass.
 - `TilePusher` caps the BFS at `maxTiles`, clamps config values, and protects energy capacity/cost from `int` overflow; teleporters/boosters use the same math.
-- The copied CoFH/Thaumcraft API stubs in `src/api` were replaced with `devOnlyNonPublishable` dependencies.
+- The copied CoFH/Thaumcraft API stubs in `src/api` were replaced with `devOnlyNonPublishable`/`compileOnly` dependencies.
+- `ChunkRerenderer` no longer indexes `RenderGlobal.worldRenderers`; it only calls `markBlockForUpdate`, and `TileMovingClient` is registered as an Angelica dynamic-bounds class.
+- `FakeWorldClient` uses a concurrent/synchronized cache, and non-mover lookups delegate to the real world; `getRenderBoundingBox` no longer constructs a fake world and handles zero-duration/teleport scaling.
+- `MoveCheckReflector` treats `LinkageError` (client-only method signatures on a dedicated server) as movable without spamming a stack trace.
 
-Each item has a focused JUnit regression test where the behaviour is reachable without a live world; see [`TESTING.md`](TESTING.md).
+Each item has a focused JUnit regression test where the behaviour is reachable without a live world. A real dedicated server harness (`./gradlew runServer -PflHarness=true`) covers the world/chunk/move paths; see [`TESTING.md`](TESTING.md).
 
 ---
 
