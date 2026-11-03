@@ -53,18 +53,26 @@ public class RenderBlockSlider extends RenderBlockPusher {
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile == null || tile.getClass() != TileSlider.class) return flag;
 
-        renderer.renderAllFaces = false;
+        int previousRenderSide = BlockSlider.getRenderSide();
+        boolean previousRenderAllFaces = renderer.renderAllFaces;
 
         ForgeDirection dir = ((TileSlider) tile).getFacing();
         ForgeDirection arrowDir = ((TileSlider) tile).getSlideDir();
-        BlockSlider.renderSide = TileSlider.getOrthogonal(arrowDir, dir)
+        int renderSide = TileSlider.getOrthogonal(arrowDir, dir)
             .ordinal();
+
+        renderer.renderAllFaces = false;
+        BlockSlider.setRenderSide(renderSide);
         renderer.setOverrideBlockTexture(BlockSlider.iconSlider1);
         setRotations(renderer, arrowDir.ordinal());
-        flag = flag | renderer.renderStandardBlock(block, x, y, z);
-        resetRotations(renderer);
-        renderer.clearOverrideBlockTexture();
-        BlockSlider.renderSide = -1;
+        try {
+            flag = flag | renderer.renderStandardBlock(block, x, y, z);
+        } finally {
+            BlockSlider.setRenderSide(previousRenderSide);
+            resetRotations(renderer);
+            renderer.clearOverrideBlockTexture();
+            renderer.renderAllFaces = previousRenderAllFaces;
+        }
 
         return flag;
 

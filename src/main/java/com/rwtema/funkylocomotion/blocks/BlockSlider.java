@@ -24,7 +24,34 @@ public class BlockSlider extends BlockPusher {
     public static IIcon iconSlider;
     public static IIcon iconSliderPush;
     public static IIcon iconSliderFront;
-    public static int renderSide = -1;
+
+    /**
+     * The side currently being rendered by {@link com.rwtema.funkylocomotion.rendering.RenderBlockSlider}.
+     * This used to be a plain static field, which is unsafe under Angelica because
+     * block sections are meshed on multiple worker threads. Keep it thread-local so
+     * each meshing task sees only its own render pass.
+     */
+    private static final ThreadLocal<Integer> RENDER_SIDE = new ThreadLocal<Integer>() {
+
+        @Override
+        protected Integer initialValue() {
+            return -1;
+        }
+    };
+
+    public static int getRenderSide() {
+        return RENDER_SIDE.get();
+    }
+
+    public static void setRenderSide(int side) {
+        RENDER_SIDE.set(side);
+    }
+
+    static boolean isRenderSideVisible(int renderSide, int side) {
+        if (renderSide == 6) return false;
+        if (renderSide < 0 || renderSide > 5) return true;
+        return side == renderSide || side == Facing.oppositeSide[renderSide];
+    }
 
     public BlockSlider() {
         super();
@@ -48,8 +75,7 @@ public class BlockSlider extends BlockPusher {
 
     @Override
     public boolean shouldSideBeRendered(IBlockAccess world, int x, int y, int z, int side) {
-        return renderSide != 6 && (renderSide == -1 || (side == renderSide || side == Facing.oppositeSide[renderSide]))
-            && super.shouldSideBeRendered(world, x, y, z, side);
+        return isRenderSideVisible(getRenderSide(), side) && super.shouldSideBeRendered(world, x, y, z, side);
     }
 
     @Override
