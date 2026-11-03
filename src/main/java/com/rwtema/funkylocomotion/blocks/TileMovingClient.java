@@ -1,8 +1,9 @@
 package com.rwtema.funkylocomotion.blocks;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
@@ -12,15 +13,14 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.World;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.ChunkCoordinates;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
-import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.rendering.ChunkRerenderer;
 
 import cpw.mods.fml.relauncher.Side;
@@ -28,7 +28,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public class TileMovingClient extends TileMovingBase {
 
-    public static final HashMap<ChunkCoordinates, WeakReference<TileEntity>> cachedTiles = new HashMap<ChunkCoordinates, WeakReference<TileEntity>>();
+    public static final Map<TileCacheKey, WeakReference<TileEntity>> cachedTiles = new ConcurrentHashMap<TileCacheKey, WeakReference<TileEntity>>();
     public static final HashSet<Class> renderBlackList = new HashSet<Class>();
     public static final HashSet<Class> renderErrorList = new HashSet<Class>();
     public Block block = Blocks.air;
@@ -62,7 +62,13 @@ public class TileMovingClient extends TileMovingBase {
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
 
         NBTTagCompound tag = pkt.func_148857_g();
-        block = Block.getBlockById(tag.getInteger("Block"));
+        Block packetBlock = Block.getBlockById(tag.getInteger("Block"));
+        if (packetBlock == null) {
+            packetBlock = Blocks.air;
+            error = true;
+            render = false;
+        }
+        block = packetBlock;
         meta = tag.getInteger("Meta");
 
         time = tag.getInteger("Time");
@@ -77,7 +83,12 @@ public class TileMovingClient extends TileMovingBase {
             collisions = AxisTags(tag.getTagList("Collisions", 10));
         }
 
-        BlockHelper.postUpdateBlock(worldObj, new BlockPos(this));
+        // The client only needs a render update; postUpdateBlock's light
+        // recalculation is for direct server-side writes and is very expensive
+        // for every block in a large moving frame.
+        if (worldObj != null && worldObj.blockExists(xCoord, yCoord, zCoord)) {
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+        }
 
         dir = tag.getByte("Dir");
 
@@ -85,8 +96,8 @@ public class TileMovingClient extends TileMovingBase {
 
         if (this.dir >= 0 && this.dir < 8 && this.dir != 6) {
             ForgeDirection d = ForgeDirection.getOrientation(this.dir);
-            WeakReference<TileEntity> ref = cachedTiles
-                .remove(new ChunkCoordinates(xCoord - d.offsetX, yCoord - d.offsetY, zCoord - d.offsetZ));
+            WeakReference<TileEntity> ref = cachedTiles.remove(
+                new TileCacheKey(worldObj, xCoord - d.offsetX, yCoord - d.offsetY, zCoord - d.offsetZ));
 
             if (ref != null) tile = ref.get();
         }
@@ -133,18 +144,29 @@ public class TileMovingClient extends TileMovingBase {
 
     public boolean checkClass(Object o) {
         if (o == null) return false;
-        if (renderBlackList.contains(o.getClass())) {
-            this.render = false;
-            return true;
+
+        Class<?> clazz = o.getClass();
+        for (Class<?> blocked : renderBlackList) {
+            if (blocked.isAssignableFrom(clazz)) {
+                this.render = false;
+                return true;
+            }
         }
 
-        if (renderErrorList.contains(o.getClass())) {
-            this.render = false;
-            this.error = true;
-            return true;
+        for (Class<?> errored : renderErrorList) {
+            if (errored.isAssignableFrom(clazz)) {
+                this.render = false;
+                this.error = true;
+                return true;
+            }
         }
 
         return false;
+    }
+
+    public static void clearCachedTiles(World world) {
+        int dimension = world == null || world.provider == null ? Integer.MIN_VALUE : world.provider.dimensionId;
+        cachedTiles.keySet().removeIf(key -> key.dimension == dimension);
     }
 
     @SideOnly(Side.CLIENT)

@@ -275,6 +275,7 @@ public class FakeWorldClient extends WorldClient {
         @SubscribeEvent
         public void onDimensionUnload(WorldEvent.Unload event) {
             cache.remove(event.world);
+            TileMovingClient.clearCachedTiles(event.world);
 
             MinecraftServer server = MinecraftServer.getServer();
             if (server != null && !server.isServerRunning()) {

@@ -5,11 +5,11 @@ import java.lang.ref.WeakReference;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
 import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.blocks.TileCacheKey;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 
@@ -67,7 +67,8 @@ public class MessageClearTile implements IMessage {
         // Cache before removal: removeTileEntity invalidates the tile and some mods
         // clear state in invalidate().
         if (FakeWorldClient.isValid(clientWorld)) {
-            TileMovingClient.cachedTiles.put(new ChunkCoordinates(x, y, z), new WeakReference<TileEntity>(tile));
+            TileMovingClient.cachedTiles
+                .put(new TileCacheKey(clientWorld, x, y, z), new WeakReference<TileEntity>(tile));
         }
 
         // Use the canonical removal path (correct ChunkPosition key, invalidate, and
