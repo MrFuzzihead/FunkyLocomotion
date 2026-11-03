@@ -72,22 +72,31 @@ public class TileTeleport extends TilePusher {
         for (Iterator<TileTeleport> iterator = tileTeleports.iterator(); iterator.hasNext();) {
             TileTeleport tile = iterator.next();
 
-            if (tile.isInvalid()) iterator.remove();
+            if (tile.isInvalid()) {
+                iterator.remove();
+                continue;
+            }
 
             if (tile == this || !tile.hasWorldObj()) continue;
 
             World world = tile.getWorldObj();
 
-            if (world == null || world.isRemote) iterator.remove();
+            if (world == null || world.isRemote || world.provider == null) {
+                iterator.remove();
+                continue;
+            }
 
             if (DimensionManager.getWorld(world.provider.dimensionId) != world) {
                 iterator.remove();
+                continue;
             }
 
             if (!world.blockExists(tile.xCoord, tile.yCoord, tile.zCoord)) continue;
 
             return tile;
         }
+
+        if (tileTeleports.isEmpty()) cache.remove(teleportId);
         return null;
     }
 
@@ -189,6 +198,7 @@ public class TileTeleport extends TilePusher {
             WeakSet<TileTeleport> tileTeleports = cache.get(teleportId);
             if (tileTeleports != null) {
                 tileTeleports.remove(this);
+                if (tileTeleports.isEmpty()) cache.remove(teleportId);
             }
         }
     }
@@ -196,7 +206,7 @@ public class TileTeleport extends TilePusher {
     @Override
     public void validate() {
         super.validate();
-        if (teleportId != 0 && (worldObj == null || !worldObj.isRemote)) {
+        if (teleportId != 0 && worldObj != null && !worldObj.isRemote) {
 
             WeakSet<TileTeleport> tileTeleports = cache.get(teleportId);
             if (tileTeleports == null) {
