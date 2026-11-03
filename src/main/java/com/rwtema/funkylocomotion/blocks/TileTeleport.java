@@ -91,12 +91,25 @@ public class TileTeleport extends TilePusher {
         return null;
     }
 
-    private BlockPos getDestinationPos(TileTeleport tile, BlockPos pos) {
+    static ForgeDirection getTeleportFacing(int meta) {
+        return ForgeDirection.getOrientation(meta % 6)
+            .getOpposite();
+    }
 
-        BlockPos srcPos = new BlockPos(this).advance(getBlockMetadata() ^ 1);
-        BlockPos dstPos = new BlockPos(tile).advance(tile.getBlockMetadata() ^ 1);
+    static BlockPos getDestinationPos(BlockPos srcHome, int srcMeta, BlockPos dstHome, int dstMeta, BlockPos pos) {
+        BlockPos srcPos = srcHome.advance(getTeleportFacing(srcMeta));
+        BlockPos dstPos = dstHome.advance(getTeleportFacing(dstMeta));
 
         return new BlockPos(pos.x - srcPos.x + dstPos.x, pos.y - srcPos.y + dstPos.y, pos.z - srcPos.z + dstPos.z);
+    }
+
+    private BlockPos getDestinationPos(TileTeleport tile, BlockPos pos) {
+        return getDestinationPos(
+            new BlockPos(this),
+            getBlockMetadata(),
+            new BlockPos(tile),
+            tile.getBlockMetadata(),
+            pos);
     }
 
     public void startMoving() {
