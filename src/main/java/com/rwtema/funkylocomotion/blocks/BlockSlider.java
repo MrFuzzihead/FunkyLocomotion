@@ -115,9 +115,7 @@ public class BlockSlider extends BlockPusher {
                 }
             } else {
 
-                if (side == meta) side = Facing.oppositeSide[side];
-
-                world.setBlockMetadataWithNotify(x, y, z, (meta < 6 ? 0 : 6) + side, 3);
+                world.setBlockMetadataWithNotify(x, y, z, toggleFacing(meta, side), 3);
 
                 if (tile != null && tile.getClass() == TileSlider.class) {
                     ((TileSlider) tile).getSlideDir();
@@ -127,6 +125,11 @@ public class BlockSlider extends BlockPusher {
 
         }
         return true;
+    }
+
+    static int toggleFacing(int meta, int side) {
+        if (side == meta % 6) side = Facing.oppositeSide[side];
+        return (meta < 6 ? 0 : 6) + side;
     }
 
     @Override
