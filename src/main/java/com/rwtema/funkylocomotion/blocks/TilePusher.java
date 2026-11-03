@@ -13,6 +13,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
 import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IAdvStickyBlock;
 import com.rwtema.funkylocomotion.api.IStickyBlock;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.movers.IMover;
@@ -119,6 +120,19 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
             posSet.add(pos);
 
             Block b = BlockHelper.getBlock(world, pos);
+
+            IAdvStickyBlock advanced = ProxyRegistry.getInterface(b, IAdvStickyBlock.class);
+            if (advanced != null) {
+                List<BlockPos> additional = advanced.getBlocksToMove(world, pos);
+                if (additional != null) {
+                    for (BlockPos newPos : additional) {
+                        if (newPos == null || home.equals(newPos) || toIterateSet.contains(newPos)) continue;
+                        if (!BlockHelper.canMoveBlock(world, newPos)) continue;
+                        toIterate.add(newPos);
+                        toIterateSet.add(newPos);
+                    }
+                }
+            }
 
             IStickyBlock stickyBlock = ProxyRegistry.getInterface(b, IStickyBlock.class);
 

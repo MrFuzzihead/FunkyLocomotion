@@ -17,7 +17,6 @@ public class FactoryRegistry {
     public static final Map<Class<? extends Block>, IMoveFactory> moveFactoryMapBlockClass = new HashMap<Class<? extends Block>, IMoveFactory>();
     public static final Map<Class<?>, IMoveFactory> moveFactoryMapInheritanceClass = new HashMap<Class<?>, IMoveFactory>();
     private static final DefaultMoveFactory defaultFactory = new DefaultMoveFactory();
-    public static final ChunkUnloadFactory chunkUnloadFactory = new ChunkUnloadFactory();
 
     public static IMoveFactory getDefaultFactory() {
         return defaultFactory;
