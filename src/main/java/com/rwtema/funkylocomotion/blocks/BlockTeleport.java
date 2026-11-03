@@ -69,8 +69,7 @@ public class BlockTeleport extends BlockPusher {
         }
 
         int stat = getIdFromBlock(this);
-        if (stat >= 0 && stat < StatList.mineBlockStatArray.length
-            && StatList.mineBlockStatArray[stat] != null) {
+        if (stat >= 0 && stat < StatList.mineBlockStatArray.length && StatList.mineBlockStatArray[stat] != null) {
             player.addStat(StatList.mineBlockStatArray[stat], 1);
         }
         player.addExhaustion(0.025F);

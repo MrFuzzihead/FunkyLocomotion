@@ -575,7 +575,9 @@ public class MoveManager {
         try {
             return makeStringUnsafe(o, n);
         } catch (Throwable t) {
-            return o == null ? "null" : o.getClass().getName() + "{...}";
+            return o == null ? "null"
+                : o.getClass()
+                    .getName() + "{...}";
         }
     }
 

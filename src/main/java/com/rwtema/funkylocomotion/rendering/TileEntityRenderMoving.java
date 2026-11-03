@@ -51,60 +51,60 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         try {
-        this.bindTexture(TextureMap.locationBlocksTexture);
-        boolean flag = false;
+            this.bindTexture(TextureMap.locationBlocksTexture);
+            boolean flag = false;
 
-        Tessellator tessellator = Tessellator.instance;
+            Tessellator tessellator = Tessellator.instance;
 
-        int pass = MinecraftForgeClient.getRenderPass();
-        if (mover.render && mover.block.canRenderInPass(pass)
-            && mover.block.getRenderType() >= 0
-            && (renderBlocks != null || createCache())) {
-            GL11.glPushMatrix();
+            int pass = MinecraftForgeClient.getRenderPass();
+            if (mover.render && mover.block.canRenderInPass(pass)
+                && mover.block.getRenderType() >= 0
+                && (renderBlocks != null || createCache())) {
+                GL11.glPushMatrix();
 
-            setupTranslations(x, y, z, mover, h, dir);
+                setupTranslations(x, y, z, mover, h, dir);
 
-            flag = renderStatic(mover, pass);
+                flag = renderStatic(mover, pass);
 
-            GL11.glPopMatrix();
-            GL11.glEnable(GL11.GL_CULL_FACE);
-        }
-
-        flag = flag | renderDynamic(x, y, z, f, mover, h, dir, pass);
-
-        if (pass == 0) {
-            mover.failedToRenderInFirstPass = !flag;
-        } else if (!flag && mover.failedToRenderInFirstPass) {
-            GL11.glPushMatrix();
-
-            setupTranslations(x, y, z, mover, h, dir);
-
-            RenderHelper.disableStandardItemLighting();
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            GL11.glEnable(GL11.GL_BLEND);
-
-            if (Minecraft.isAmbientOcclusionEnabled()) {
-                GL11.glShadeModel(GL11.GL_SMOOTH);
-            } else {
-                GL11.glShadeModel(GL11.GL_FLAT);
+                GL11.glPopMatrix();
+                GL11.glEnable(GL11.GL_CULL_FACE);
             }
 
-            tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
-            tessellator.startDrawingQuads();
-            renderBlocks.setOverrideBlockTexture(mover.error ? BlockMoving.crate_error : BlockMoving.crate);
-            renderBlocks.renderBlockByRenderType(Blocks.stone, mover.xCoord, mover.yCoord, mover.zCoord);
-            renderBlocks.clearOverrideBlockTexture();
+            flag = flag | renderDynamic(x, y, z, f, mover, h, dir, pass);
 
-            mover.cachedState[0] = leadVertexState();
-            mover.skipPass[0] = false;
-            mover.cachedState[1] = null;
-            mover.skipPass[1] = true;
+            if (pass == 0) {
+                mover.failedToRenderInFirstPass = !flag;
+            } else if (!flag && mover.failedToRenderInFirstPass) {
+                GL11.glPushMatrix();
 
-            tessellator.draw();
-            GL11.glPopMatrix();
+                setupTranslations(x, y, z, mover, h, dir);
 
-            RenderHelper.enableStandardItemLighting();
-        }
+                RenderHelper.disableStandardItemLighting();
+                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                GL11.glEnable(GL11.GL_BLEND);
+
+                if (Minecraft.isAmbientOcclusionEnabled()) {
+                    GL11.glShadeModel(GL11.GL_SMOOTH);
+                } else {
+                    GL11.glShadeModel(GL11.GL_FLAT);
+                }
+
+                tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
+                tessellator.startDrawingQuads();
+                renderBlocks.setOverrideBlockTexture(mover.error ? BlockMoving.crate_error : BlockMoving.crate);
+                renderBlocks.renderBlockByRenderType(Blocks.stone, mover.xCoord, mover.yCoord, mover.zCoord);
+                renderBlocks.clearOverrideBlockTexture();
+
+                mover.cachedState[0] = leadVertexState();
+                mover.skipPass[0] = false;
+                mover.cachedState[1] = null;
+                mover.skipPass[1] = true;
+
+                tessellator.draw();
+                GL11.glPopMatrix();
+
+                RenderHelper.enableStandardItemLighting();
+            }
         } finally {
             GL11.glPopAttrib();
         }

@@ -19,9 +19,9 @@ import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IAdvStickyBlock;
 import com.rwtema.funkylocomotion.api.IStickyBlock;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
+import com.rwtema.funkylocomotion.movepermissions.MovePermissionRegistry;
 import com.rwtema.funkylocomotion.movers.IMover;
 import com.rwtema.funkylocomotion.movers.MoveManager;
-import com.rwtema.funkylocomotion.movepermissions.MovePermissionRegistry;
 import com.rwtema.funkylocomotion.particles.ObstructionHelper;
 import com.rwtema.funkylocomotion.proxydelegates.ProxyRegistry;
 
