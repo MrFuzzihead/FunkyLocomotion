@@ -205,9 +205,11 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             mover.skipPass[pass] = true;
 
             boolean rendered = false;
+            boolean failed = false;
             try {
                 rendered = renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord);
             } catch (Exception | LinkageError e) {
+                failed = true;
                 (new RuntimeException(
                     "Unable to render block " + Block.blockRegistry.getNameForObject(mover.block)
                         + " with meta "
@@ -230,11 +232,11 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                 mover.skipPass[pass] = true;
             }
 
-            MoverRenderResult result = MoverRenderResult.classify(rendered, tessellator.rawBufferIndex);
+            MoverRenderResult result = MoverRenderResult.classify(failed, rendered, tessellator.rawBufferIndex);
             if (result == MoverRenderResult.CACHE) {
                 mover.cachedState[pass] = leadVertexState();
                 mover.skipPass[pass] = false;
-            } else if (result == MoverRenderResult.SKIP) {
+            } else if (result == MoverRenderResult.FAILED || result == MoverRenderResult.SKIP) {
                 mover.cachedState[pass] = null;
                 mover.skipPass[pass] = true;
             } else {

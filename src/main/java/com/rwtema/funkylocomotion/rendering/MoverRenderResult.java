@@ -13,9 +13,11 @@ enum MoverRenderResult {
 
     CACHE,
     RETRY,
-    SKIP;
+    SKIP,
+    FAILED;
 
-    static MoverRenderResult classify(boolean rendered, int vertexCount) {
+    static MoverRenderResult classify(boolean failed, boolean rendered, int vertexCount) {
+        if (failed) return FAILED;
         if (!rendered) return RETRY;
         return vertexCount > 0 ? CACHE : SKIP;
     }
