@@ -19,6 +19,9 @@ import com.rwtema.funkylocomotion.movepermissions.MoveCheckRegistry;
 public class BlockHelper {
 
     public static boolean silentSetBlock(Chunk chunk, BlockPos pos, Block block, int meta) {
+        if (chunk == null || pos == null || block == null) return false;
+        if (pos.y < 0 || pos.y > 255) return false;
+
         int dx = pos.x & 15;
         int dz = pos.z & 15;
         int y = pos.y;
@@ -51,6 +54,9 @@ public class BlockHelper {
             extendedblockstorage.setExtBlockMetadata(dx, y & 15, dz, meta);
 
             chunk.isModified = true;
+            if (block != Blocks.air && chunk.worldObj != null) {
+                block.onBlockAdded(chunk.worldObj, pos.x, pos.y, pos.z);
+            }
             return true;
         }
 
@@ -153,15 +159,19 @@ public class BlockHelper {
     }
 
     public static void breakBlockWithDrop(World world, BlockPos pos) {
+        if (world == null || world.isRemote) return;
+
         Block block = getBlock(world, pos);
+        if (block == null || block.getMaterial() == Material.air) return;
 
-        if (block.getMaterial() != Material.air) {
-            int l = world.getBlockMetadata(pos.x, pos.y, pos.z);
-            world.playAuxSFX(2001, pos.x, pos.y, pos.z, Block.getIdFromBlock(block) + (l << 12));
-            block.dropBlockAsItem(world, pos.x, pos.y, pos.z, l, 0);
-        }
+        int meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
+        world.playAuxSFX(2001, pos.x, pos.y, pos.z, Block.getIdFromBlock(block) + (meta << 12));
+        block.onBlockDestroyedByPlayer(world, pos.x, pos.y, pos.z, meta);
+        block.dropBlockAsItem(world, pos.x, pos.y, pos.z, meta, 0);
 
-        world.setBlock(pos.x, pos.y, pos.z, Blocks.air, 0, 2);
+        world.removeTileEntity(pos.x, pos.y, pos.z);
+        // Flag 3: notify neighbours and send the block change to clients.
+        world.setBlock(pos.x, pos.y, pos.z, Blocks.air, 0, 3);
     }
 
     public static boolean isValid(World world, BlockPos pos) {
