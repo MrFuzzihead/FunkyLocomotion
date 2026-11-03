@@ -1,6 +1,7 @@
 package com.rwtema.funkylocomotion.description;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class DescriptorRegistry {
     }
 
     public static List<IDescriptionProxy> getProxyList() {
-        return proxyList;
+        return Collections.unmodifiableList(new ArrayList<IDescriptionProxy>(proxyList));
     }
 
     public static IDescriptionProxy getDescriptor(String s) {
