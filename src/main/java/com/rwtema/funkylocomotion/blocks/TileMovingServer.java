@@ -3,6 +3,7 @@ package com.rwtema.funkylocomotion.blocks;
 import java.lang.ref.WeakReference;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 
@@ -25,18 +26,22 @@ public class TileMovingServer extends TileMovingBase {
     public Packet getDescriptionPacket() {
         if (desc == null) return null;
 
-        desc.setInteger("Time", time);
-        desc.setInteger("MaxTime", maxTime);
-        desc.setByte("Dir", (byte) dir);
+        // S35PacketUpdateTileEntity serializes its tag on the Netty thread, while
+        // this method runs on the server thread. Never hand out the live desc tag:
+        // the next tick mutates it while the previous packet is still being written.
+        NBTTagCompound packetTag = (NBTTagCompound) desc.copy();
+        packetTag.setInteger("Time", time);
+        packetTag.setInteger("MaxTime", maxTime);
+        packetTag.setByte("Dir", (byte) dir);
 
-        if (lightLevel > 0) desc.setByte("Light", (byte) lightLevel);
-        if (lightOpacity > 0) desc.setShort("Opacity", (short) lightOpacity);
+        if (lightLevel > 0) packetTag.setByte("Light", (byte) lightLevel);
+        if (lightOpacity > 0) packetTag.setShort("Opacity", (short) lightOpacity);
 
-        if (collisions.length > 0) {
-            desc.setTag("Collisions", TagsAxis(collisions));
+        if (collisions != null && collisions.length > 0) {
+            packetTag.setTag("Collisions", TagsAxis(collisions));
         }
 
-        return new S35PacketUpdateTileEntity(this.xCoord, this.yCoord, this.zCoord, 0, desc);
+        return new S35PacketUpdateTileEntity(this.xCoord, this.yCoord, this.zCoord, 0, packetTag);
     }
 
     @Override
