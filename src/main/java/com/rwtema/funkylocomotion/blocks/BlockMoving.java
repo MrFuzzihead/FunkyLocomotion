@@ -19,7 +19,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -87,9 +86,17 @@ public class BlockMoving extends Block {
 
     @Override
     public TileEntity createTileEntity(World world, int metadata) {
-        if (world.isRemote || FMLCommonHandler.instance()
-            .getEffectiveSide() == Side.CLIENT) return new TileMovingClient();
-        else return new TileMovingServer();
+        return createTileEntity(world.isRemote);
+    }
+
+    /**
+     * The logical side is a property of the world, not of the thread that happens
+     * to create the tile entity. FMLCommonHandler.getEffectiveSide() is thread-name
+     * based and returns CLIENT for any server-side thread not literally named
+     * "Server thread", which would create a client tile entity in a WorldServer.
+     */
+    static TileEntity createTileEntity(boolean remote) {
+        return remote ? new TileMovingClient() : new TileMovingServer();
     }
 
     @Override
