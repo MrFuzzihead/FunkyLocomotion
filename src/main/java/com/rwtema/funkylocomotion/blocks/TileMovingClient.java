@@ -100,6 +100,10 @@ public class TileMovingClient extends TileMovingBase {
             tile.blockMetadata = this.meta;
 
             tile.setWorldObj(FakeWorldClient.getFakeWorldWrapper(this.worldObj));
+            // The tile was invalidated when it was removed from the source chunk.
+            // Clear that flag now that it has been repurposed, otherwise TESRs and
+            // mods that skip invalid tile entities will skip it too.
+            tile.validate();
             this.tile = tile;
             render = true;
         } else {

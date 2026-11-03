@@ -7,7 +7,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 
 import com.rwtema.funkylocomotion.FunkyLocomotion;
 import com.rwtema.funkylocomotion.api.BlockPos;
@@ -64,13 +63,19 @@ public class MessageClearTile implements IMessage {
 
         if (tile == null) return;
 
-        clientWorld.loadedTileEntityList.remove(tile);
-        Chunk chunk = clientWorld.getChunkFromBlockCoords(x, z);
-        chunk.chunkTileEntityMap.remove(new ChunkCoordinates(x & 15, y, z & 15));
-        tile.invalidate();
+        // Keep the tile so a moving tile entity can reuse it as its render source.
+        // Cache before removal: removeTileEntity invalidates the tile and some mods
+        // clear state in invalidate().
+        if (FakeWorldClient.isValid(clientWorld)) {
+            TileMovingClient.cachedTiles.put(new ChunkCoordinates(x, y, z), new WeakReference<TileEntity>(tile));
+        }
 
-        if (!FakeWorldClient.isValid(clientWorld)) return;
-        TileMovingClient.cachedTiles.put(new ChunkCoordinates(x, y, z), new WeakReference<TileEntity>(tile));
+        // Use the canonical removal path (correct ChunkPosition key, invalidate, and
+        // light/neighbour notification) instead of poking the chunk map directly.
+        // Also drop it from the loaded list immediately so it cannot be ticked as a
+        // ghost tile before World.updateEntities gets a chance to purge it.
+        clientWorld.loadedTileEntityList.remove(tile);
+        clientWorld.removeTileEntity(x, y, z);
     }
 
     public static class Handler implements IMessageHandler<MessageClearTile, IMessage> {
