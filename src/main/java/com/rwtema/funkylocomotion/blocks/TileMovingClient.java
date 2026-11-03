@@ -21,6 +21,7 @@ import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+import com.rwtema.funkylocomotion.movers.MoveSnapshot;
 import com.rwtema.funkylocomotion.rendering.ChunkRerenderer;
 
 import cpw.mods.fml.relauncher.Side;
@@ -62,14 +63,14 @@ public class TileMovingClient extends TileMovingBase {
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
 
         NBTTagCompound tag = pkt.func_148857_g();
-        Block packetBlock = Block.getBlockById(tag.getInteger("Block"));
+        Block packetBlock = MoveSnapshot.readBlock(tag);
         if (packetBlock == null) {
             packetBlock = Blocks.air;
             error = true;
             render = false;
         }
         block = packetBlock;
-        meta = tag.getInteger("Meta");
+        meta = MoveSnapshot.readMeta(tag);
 
         time = tag.getInteger("Time");
         maxTime = tag.getInteger("MaxTime");

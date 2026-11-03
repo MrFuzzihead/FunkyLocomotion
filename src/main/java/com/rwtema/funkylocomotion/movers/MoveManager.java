@@ -180,7 +180,10 @@ public class MoveManager {
                 NBTTagCompound descriptor = new NBTTagCompound();
 
                 descriptor.setInteger("Block", Block.getIdFromBlock(e.block));
-                if (e.meta != 0) descriptor.setByte("Meta", (byte) e.meta);
+                String blockName = Block.blockRegistry.getNameForObject(e.block);
+                if (blockName != null) descriptor.setString("BlockName", blockName);
+                descriptor.setByte("Meta", (byte) e.meta);
+                descriptor.setInteger(MoveSnapshot.VERSION_KEY, MoveSnapshot.VERSION);
 
                 TileEntity tile = srcWorld.getTileEntity(srcPos.x, srcPos.y, srcPos.z);
                 if (tile != null) {
@@ -483,9 +486,8 @@ public class MoveManager {
                     World world = tile.getWorldObj();
                     BlockPos pos = new BlockPos(tile);
                     if (tile.block != null && tile.block.hasKey("Block")) {
-                        Block block = Block.getBlockFromName(tile.block.getString("Block"));
+                        Block block = MoveSnapshot.readBlock(tile.block);
                         vars.put("block", block);
-                        if (block == null) block = Blocks.air;
                         IMoveFactory factory = FactoryRegistry.getFactory(block);
                         vars.put("factory", factory);
                         factory.recreateBlock(world, pos, tile.block);

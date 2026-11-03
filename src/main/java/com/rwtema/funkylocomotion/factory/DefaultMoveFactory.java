@@ -11,6 +11,7 @@ import net.minecraft.world.chunk.Chunk;
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IMoveFactory;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
+import com.rwtema.funkylocomotion.movers.MoveSnapshot;
 
 public class DefaultMoveFactory implements IMoveFactory {
 
@@ -31,15 +32,9 @@ public class DefaultMoveFactory implements IMoveFactory {
         Block b = chunk.getBlock(pos.x & 15, pos.y, pos.z & 15);
         int meta = chunk.getBlockMetadata(pos.x & 15, pos.y, pos.z & 15);
 
-        NBTTagCompound tag = new NBTTagCompound();
+        if (b == Blocks.air) return new NBTTagCompound();
 
-        if (b == Blocks.air) return tag;
-
-        String name = Block.blockRegistry.getNameForObject(b);
-
-        tag.setString("Block", name);
-        if (meta != 0) tag.setByte("Meta", (byte) meta);
-
+        NBTTagCompound tag = MoveSnapshot.createBlockTag(b, meta);
         saveTile(pos, chunk, tag);
 
         BlockHelper.silentClear(chunk, pos);
