@@ -1,6 +1,7 @@
 package com.rwtema.funkylocomotion.fakes;
 
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -34,7 +35,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class FakeWorldClient extends WorldClient {
 
-    private static final HashMap<World, FakeWorldClient> cache = new HashMap<World, FakeWorldClient>();
+    private static final Map<World, FakeWorldClient> cache = new ConcurrentHashMap<World, FakeWorldClient>();
     public double offset = 0;
     public ForgeDirection dir = ForgeDirection.UNKNOWN;
     final World world;
@@ -59,11 +60,24 @@ public class FakeWorldClient extends WorldClient {
     public static FakeWorldClient getFakeWorldWrapper(World world) {
         FakeWorldClient fakeWorldClient = cache.get(world);
         if (fakeWorldClient == null) {
-            fakeWorldClient = new FakeWorldClient(world);
-            cache.put(world, fakeWorldClient);
+            // Construction fires WorldEvent.Load and allocates a WorldClient, so
+            // avoid creating duplicate wrappers when the first render and a packet
+            // arrive concurrently. This should still only be called from the
+            // client/render thread, but the cache itself must not corrupt.
+            synchronized (cache) {
+                fakeWorldClient = cache.get(world);
+                if (fakeWorldClient == null) {
+                    fakeWorldClient = new FakeWorldClient(world);
+                    cache.put(world, fakeWorldClient);
+                }
+            }
         }
 
         return fakeWorldClient;
+    }
+
+    public static void clear() {
+        cache.clear();
     }
 
     public static void register() {
@@ -111,13 +125,13 @@ public class FakeWorldClient extends WorldClient {
         TileMovingClient tile = getTile(x, y, z);
         if (tile != null) return tile.block;
 
-        return Blocks.air;
+        return world.getBlock(x, y, z);
     }
 
     @Override
     public TileEntity getTileEntity(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile == null ? null : tile.tile;
+        return tile == null ? world.getTileEntity(x, y, z) : tile.tile;
     }
 
     @Override
@@ -139,7 +153,7 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public int getBlockMetadata(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile == null ? 0 : tile.meta;
+        return tile == null ? world.getBlockMetadata(x, y, z) : tile.meta;
     }
 
     @Override
@@ -150,7 +164,7 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public boolean isAirBlock(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile == null || tile.block == Blocks.air;
+        return tile == null ? world.isAirBlock(x, y, z) : tile.block == Blocks.air;
     }
 
     @Override
@@ -174,7 +188,7 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public boolean isSideSolid(int x, int y, int z, ForgeDirection side, boolean _default) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile != null && tile.block.isSideSolid(this, x, y, z, side);
+        return tile == null ? world.isSideSolid(x, y, z, side, _default) : tile.block.isSideSolid(this, x, y, z, side);
     }
 
     @Override
@@ -264,7 +278,7 @@ public class FakeWorldClient extends WorldClient {
 
             MinecraftServer server = MinecraftServer.getServer();
             if (server != null && !server.isServerRunning()) {
-                cache.clear();
+                clear();
             }
         }
 

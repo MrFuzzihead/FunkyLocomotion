@@ -149,20 +149,51 @@ public class TileMovingClient extends TileMovingBase {
 
     @SideOnly(Side.CLIENT)
     public AxisAlignedBB getRenderBoundingBox() {
+        AxisAlignedBB box = AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1);
 
-        AxisAlignedBB other;
-        if (tile != null) other = tile.getRenderBoundingBox();
-        else other = block
-            .getCollisionBoundingBoxFromPool(FakeWorldClient.getFakeWorldWrapper(worldObj), xCoord, yCoord, zCoord);
+        AxisAlignedBB other = null;
+        if (tile != null) {
+            try {
+                other = tile.getRenderBoundingBox();
+            } catch (Throwable ignored) {
+                // A broken optional TESR should not break culling for every mover.
+            }
+        } else if (block != null && block != Blocks.air && worldObj != null) {
+            try {
+                // Use the real world; getRenderBoundingBox can be called on a
+                // Celeritas worker thread, and constructing a FakeWorldClient there
+                // fires WorldEvent.Load off the client thread.
+                other = block.getCollisionBoundingBoxFromPool(worldObj, xCoord, yCoord, zCoord);
+            } catch (Throwable ignored) {
+                // Fall back to the full block box below.
+            }
+        }
 
-        if (other == null)
-            other = AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1);
-        else other = other
-            .func_111270_a(AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1));
+        if (other != null) box = box.func_111270_a(other);
+
+        if (maxTime <= 0) return box;
 
         double h = offset(true);
-        ForgeDirection d = ForgeDirection.getOrientation(this.dir);
-        return other.getOffsetBoundingBox(h * d.offsetX, h * d.offsetY, h * d.offsetZ);
+        if (dir == 6 || dir == 7) {
+            // Teleport movers scale around the block center instead of translating.
+            double scale = dir == 6 ? h + 1.0 : -h;
+            if (scale < 0.0) scale = 0.0;
+            double cx = (box.minX + box.maxX) * 0.5;
+            double cy = (box.minY + box.maxY) * 0.5;
+            double cz = (box.minZ + box.maxZ) * 0.5;
+            return AxisAlignedBB.getBoundingBox(
+                cx + (box.minX - cx) * scale,
+                cy + (box.minY - cy) * scale,
+                cz + (box.minZ - cz) * scale,
+                cx + (box.maxX - cx) * scale,
+                cy + (box.maxY - cy) * scale,
+                cz + (box.maxZ - cz) * scale);
+        }
+
+        if (dir < 0 || dir >= 6) return box;
+
+        ForgeDirection d = ForgeDirection.getOrientation(dir);
+        return box.getOffsetBoundingBox(h * d.offsetX, h * d.offsetY, h * d.offsetZ);
     }
 
     @Override

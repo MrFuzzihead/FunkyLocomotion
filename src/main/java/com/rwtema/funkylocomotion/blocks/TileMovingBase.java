@@ -144,6 +144,7 @@ public abstract class TileMovingBase extends TileEntity {
     }
 
     public Vec3 getMovVec() {
+        if (maxTime <= 0) return Vec3.createVectorHelper(0, 0, 0);
         double d = 1.0 / maxTime;
         if (dir < 0 || dir >= 6) return Vec3.createVectorHelper(0, 0, 0);
 
@@ -234,11 +235,12 @@ public abstract class TileMovingBase extends TileEntity {
     }
 
     public float progress() {
-        return time >= maxTime ? 1 : (time + Proxy.renderTimeOffset) / (maxTime);
+        if (maxTime <= 0 || time >= maxTime) return 1;
+        return (time + Proxy.renderTimeOffset) / (maxTime);
     }
 
     public double offset(boolean t) {
-        if (time >= maxTime) return 0;
+        if (maxTime <= 0 || time >= maxTime) return 0;
         float f = t ? Proxy.renderTimeOffset : 0;
         return (time + f) / (maxTime) - 1;
     }
