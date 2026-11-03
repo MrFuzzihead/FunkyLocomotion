@@ -122,6 +122,7 @@ public class TileTeleport extends TilePusher {
     }
 
     public void startMoving() {
+        if (!canMoveByOwner()) return;
 
         TileTeleport tileTeleport = getTileTeleport();
         if (tileTeleport == null) return;

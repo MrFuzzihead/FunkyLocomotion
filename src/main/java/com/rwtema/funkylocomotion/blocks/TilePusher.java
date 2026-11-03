@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import net.minecraft.block.Block;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
@@ -18,6 +21,7 @@ import com.rwtema.funkylocomotion.api.IStickyBlock;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.movers.IMover;
 import com.rwtema.funkylocomotion.movers.MoveManager;
+import com.rwtema.funkylocomotion.movepermissions.MovePermissionRegistry;
 import com.rwtema.funkylocomotion.particles.ObstructionHelper;
 import com.rwtema.funkylocomotion.proxydelegates.ProxyRegistry;
 
@@ -35,6 +39,8 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
     public static int powerPerTile = 250;
     public final EnergyStorage energy = new EnergyStorage(energyCapacity(maxTiles, powerPerTile));
     public boolean powered;
+    public String ownerName;
+    public UUID ownerId;
 
     public static final int[] moveTime = new int[] { 20, 10, 7, 5, 4, 3 };
 
@@ -56,6 +62,8 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
         super.writeToNBT(tag);
         energy.writeToNBT(tag);
         tag.setBoolean("powered", powered);
+        if (ownerName != null) tag.setString("OwnerName", ownerName);
+        if (ownerId != null) tag.setString("OwnerId", ownerId.toString());
     }
 
     @Override
@@ -175,7 +183,22 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
         return value < min ? min : Math.min(value, max);
     }
 
+    public void setOwner(EntityLivingBase entity) {
+        if (!(entity instanceof EntityPlayer)) return;
+
+        EntityPlayer player = (EntityPlayer) entity;
+        ownerName = player.getCommandSenderName();
+        ownerId = player.getGameProfile()
+            .getId();
+    }
+
+    public boolean canMoveByOwner() {
+        return MovePermissionRegistry.canMove(worldObj, xCoord, yCoord, zCoord, ownerName, ownerId);
+    }
+
     public void startMoving() {
+        if (!canMoveByOwner()) return;
+
         int meta = getBlockMetadata();
         ForgeDirection dir = ForgeDirection.getOrientation(meta % 6)
             .getOpposite();

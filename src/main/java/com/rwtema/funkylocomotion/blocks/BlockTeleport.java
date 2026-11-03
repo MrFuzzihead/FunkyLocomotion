@@ -98,6 +98,7 @@ public class BlockTeleport extends BlockPusher {
 
     @Override
     public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase entity, ItemStack item) {
+        super.onBlockPlacedBy(world, x, y, z, entity, item);
         if (item == null || !item.hasTagCompound()) return;
 
         TileEntity tile = world.getTileEntity(x, y, z);
