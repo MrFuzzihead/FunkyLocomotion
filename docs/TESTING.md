@@ -44,6 +44,7 @@ and `ByteBuf` without launching a client or a server.
 | `TileMovingBaseNbtTest` | NBT round-trip of `block`/`desc`, time/maxTime/dir, collision boxes, scheduled tick time/priority, light values; missing keys; clamping; the old `"TimeTime"` typo is not treated as `"TickTime"`. |
 | `TileMovingServerDescriptionTest` | `getDescriptionPacket()` clones the live `desc` tag, does not mutate it, and two packets keep independent snapshots; a null description still returns no packet. |
 | `MessageClearTileTest` | Packet coordinate round-trip, including negative and large values. |
+| `MessageClearTileHandlerTest` | The client handler removes the source tile through `World.removeTileEntity` and drops it from `loadedTileEntityList`. |
 | `BlockMovingSideTest` | Server-side truck creation returns `TileMovingServer`, independent of thread names. |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
