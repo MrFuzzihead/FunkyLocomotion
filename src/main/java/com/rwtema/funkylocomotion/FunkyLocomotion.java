@@ -73,10 +73,16 @@ public class FunkyLocomotion {
 
         Configuration config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
-        TilePusher.maxTiles = config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
-            .getInt(1024);
-        TilePusher.powerPerTile = config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250)
-            .getInt(250);
+        TilePusher.maxTiles = TilePusher.clampConfig(
+            config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
+                .getInt(1024),
+            TilePusher.MIN_MAX_TILES,
+            TilePusher.MAX_MAX_TILES);
+        TilePusher.powerPerTile = TilePusher.clampConfig(
+            config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250)
+                .getInt(250),
+            TilePusher.MIN_POWER_PER_TILE,
+            TilePusher.MAX_POWER_PER_TILE);
         Recipes.shouldAddRecipes = config.get(Configuration.CATEGORY_GENERAL, "addRecipes", true)
             .getBoolean(true);
         Recipes.shouldAddFrameCopyResetRecipes = config

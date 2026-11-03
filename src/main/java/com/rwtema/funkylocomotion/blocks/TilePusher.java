@@ -25,9 +25,14 @@ import cofh.api.energy.IEnergyReceiver;
 
 public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
+    public static final int MIN_MAX_TILES = 1;
+    public static final int MAX_MAX_TILES = 8192;
+    public static final int MIN_POWER_PER_TILE = 1;
+    public static final int MAX_POWER_PER_TILE = 1000000;
+
     public static int maxTiles = 256;
     public static int powerPerTile = 1000;
-    public final EnergyStorage energy = new EnergyStorage(maxTiles * powerPerTile);
+    public final EnergyStorage energy = new EnergyStorage(energyCapacity(maxTiles, powerPerTile));
     public boolean powered;
 
     public static final int[] moveTime = new int[] { 20, 10, 7, 5, 4, 3 };
@@ -76,7 +81,7 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
         ArrayList<BlockPos> posList = new ArrayList<BlockPos>();
         HashSet<BlockPos> posSet = new HashSet<BlockPos>();
-        getBlockPosIterate(world, home, start, posList, posSet);
+        if (!getBlockPosIterate(world, home, start, posList, posSet)) return null;
 
         return checkPositions(world, moveDir, posList, posSet);
     }
@@ -95,7 +100,7 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
         return fail ? null : posList;
     }
 
-    private void getBlockPosIterate(World world, BlockPos home, BlockPos start, ArrayList<BlockPos> posList,
+    private boolean getBlockPosIterate(World world, BlockPos home, BlockPos start, ArrayList<BlockPos> posList,
         HashSet<BlockPos> posSet) {
         LinkedList<BlockPos> toIterate = new LinkedList<BlockPos>();
         HashSet<BlockPos> toIterateSet = new HashSet<BlockPos>();
@@ -105,6 +110,8 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
         // for (int i = 0; i < toIterate.size(); i++) {
         while (!toIterate.isEmpty()) {
+            if (!hasCapacityFor(posList.size())) return false;
+
             BlockPos pos = toIterate.poll();
 
             posList.add(pos);
@@ -131,6 +138,26 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
                 }
             }
         }
+        return true;
+    }
+
+    static boolean hasCapacityFor(int currentCount) {
+        return currentCount < maxTiles;
+    }
+
+    public static int energyCost(int blockCount) {
+        long cost = (long) Math.max(0, blockCount) * powerPerTile;
+        return cost > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) cost;
+    }
+
+    public static int energyCapacity(int maxTiles, int powerPerTile) {
+        long capacity = (long) clampConfig(maxTiles, MIN_MAX_TILES, MAX_MAX_TILES)
+            * clampConfig(powerPerTile, MIN_POWER_PER_TILE, MAX_POWER_PER_TILE);
+        return (int) Math.min(capacity, Integer.MAX_VALUE);
+    }
+
+    public static int clampConfig(int value, int min, int max) {
+        return value < min ? min : Math.min(value, max);
     }
 
     public void startMoving() {
@@ -143,7 +170,7 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
         BlockPos pos = new BlockPos(xCoord, yCoord, zCoord);
         List<BlockPos> posList = getBlocks(worldObj, pos, dir, push);
         if (posList != null) {
-            final int energy = posList.size() * powerPerTile;
+            final int energy = energyCost(posList.size());
             if (this.energy.extractEnergy(energy, true) != energy) return;
 
             ArrayList<TileBooster> boosters = new ArrayList<TileBooster>(6);

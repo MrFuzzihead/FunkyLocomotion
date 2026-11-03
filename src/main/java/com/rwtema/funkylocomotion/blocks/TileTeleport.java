@@ -126,7 +126,7 @@ public class TileTeleport extends TilePusher {
         BlockPos pos = new BlockPos(xCoord, yCoord, zCoord);
         List<BlockPos> posList = getBlocks(worldObj, pos, dir, push);
         if (posList != null) {
-            final int energy = posList.size() * powerPerTile;
+            final int energy = TilePusher.energyCost(posList.size());
             if (this.energy.extractEnergy(energy, true) != energy) return;
 
             if (tileTeleport.energy.extractEnergy(energy, true) != energy) return;
