@@ -6,7 +6,6 @@ import net.minecraft.client.particle.EntityReddustFX;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.World;
 
-import org.lwjgl.opengl.GL11;
 
 public class ParticleObstruction extends EntityReddustFX {
 
@@ -32,15 +31,10 @@ public class ParticleObstruction extends EntityReddustFX {
     public void renderParticle(Tessellator tessellator, float partialTickTime, float rotationX, float rotationZ,
         float rotationYZ, float rotationXY, float rotationXZ) {
         if (!ObstructionHelper.shouldRenderParticles()) return;
-        super.renderParticle(tessellator, partialTickTime, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
-        tessellator.draw();
 
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        tessellator.startDrawingQuads();
+        // Do not call tessellator.draw() from inside a particle. EffectRenderer
+        // (and Angelica's particle batching) owns the draw boundary; flushing here
+        // corrupts every other particle in the current batch.
         super.renderParticle(tessellator, partialTickTime, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
-        tessellator.draw();
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-
-        tessellator.startDrawingQuads();
     }
 }
