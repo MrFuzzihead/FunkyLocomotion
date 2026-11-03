@@ -94,6 +94,10 @@ public class ItemWrench extends Item {
 
         if (world.isRemote) {
             FunkyLocomotion.proxy.sendUsePacket(x, y, z, face, item, hitX, hitY, hitZ);
+            // The server performs the actual world mutation. Running the 5x5
+            // wrench loop on the client as well desyncs blocks and double-fires
+            // onBlockActivated.
+            return true;
         }
 
         int d1 = offsetDir1[face];
@@ -121,8 +125,8 @@ public class ItemWrench extends Item {
 
                     if (!blockingBlock.isAir(world, dx2, dy2, dz2)) {
                         if (blockingBlock.getCollisionBoundingBoxFromPool(world, dx2, dy2, dz2) != null
-                            && block.canCollideCheck(world.getBlockMetadata(dx2, dy2, dz2), false)) {
-                            if (block.collisionRayTrace(
+                            && blockingBlock.canCollideCheck(world.getBlockMetadata(dx2, dy2, dz2), false)) {
+                            if (blockingBlock.collisionRayTrace(
                                 world,
                                 dx2,
                                 dy2,
@@ -168,14 +172,14 @@ public class ItemWrench extends Item {
                     if (testBlock.isAir(world, dx, dy, dz)) continue;
 
                     if (i != 0 || j != 0) {
-                        if (isInaccessible(world, face ^ 1, hitX, hitY, hitZ, block, dx, dy, dz, testBlock)) {
+                        if (isInaccessible(world, face ^ 1, hitX, hitY, hitZ, dx, dy, dz, testBlock)) {
                             int dx2 = dx + Facing.offsetsXForSide[face];
                             int dy2 = dy + Facing.offsetsYForSide[face];
                             int dz2 = dz + Facing.offsetsZForSide[face];
 
                             Block blockingBlock = world.getBlock(dx2, dy2, dz2);
 
-                            if (isInaccessible(world, face, hitX, hitY, hitZ, block, dx2, dy2, dz2, blockingBlock))
+                            if (isInaccessible(world, face, hitX, hitY, hitZ, dx2, dy2, dz2, blockingBlock))
                                 continue;
                         }
                     }
@@ -188,12 +192,12 @@ public class ItemWrench extends Item {
         return true;
     }
 
-    private boolean isInaccessible(World world, int face, float hitX, float hitY, float hitZ, Block block, int dx2,
-        int dy2, int dz2, Block blockingBlock) {
+    private boolean isInaccessible(World world, int face, float hitX, float hitY, float hitZ, int dx2, int dy2,
+        int dz2, Block blockingBlock) {
         return !blockingBlock.isAir(world, dx2, dy2, dz2)
             && blockingBlock.getCollisionBoundingBoxFromPool(world, dx2, dy2, dz2) != null
-            && block.canCollideCheck(world.getBlockMetadata(dx2, dy2, dz2), false)
-            && block.collisionRayTrace(
+            && blockingBlock.canCollideCheck(world.getBlockMetadata(dx2, dy2, dz2), false)
+            && blockingBlock.collisionRayTrace(
                 world,
                 dx2,
                 dy2,
@@ -203,9 +207,9 @@ public class ItemWrench extends Item {
                     dy2 + (face == 0 ? -0.1 : face == 1 ? 1.1 : hitY),
                     dz2 + (face == 2 ? -0.1 : face == 3 ? 1.1 : hitZ)),
                 Vec3.createVectorHelper(
-                    dx2 + (face == 4 ? 0.1 : face == 5 ? 0.9 : hitX),
-                    dy2 + (face == 0 ? 0.1 : face == 1 ? 0.9 : hitY),
-                    dz2 + (face == 2 ? 0.1 : face == 3 ? 0.9 : hitZ)))
+                    dx2 + (face == 4 ? -0.1 : face == 5 ? 1.1 : hitX),
+                    dy2 + (face == 0 ? -0.1 : face == 1 ? 1.1 : hitY),
+                    dz2 + (face == 2 ? -0.1 : face == 3 ? 1.1 : hitZ)))
                 != null;
     }
 
