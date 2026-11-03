@@ -33,6 +33,23 @@ public final class BlockPos {
         this(tile.xCoord, tile.yCoord, tile.zCoord);
     }
 
+    /**
+     * Packs this position into a single long for hash maps/sets.
+     * 26 bits are used for x/z and 12 bits for y (0..4095).
+     */
+    public long toLong() {
+        return ((long) (x & 0x3FFFFFF) << 38) | ((long) (z & 0x3FFFFFF) << 12) | (y & 0xFFF);
+    }
+
+    public static BlockPos fromLong(long packed) {
+        int x = (int) (packed >> 38) & 0x3FFFFFF;
+        int z = (int) (packed >> 12) & 0x3FFFFFF;
+        if ((x & 0x2000000) != 0) x |= ~0x3FFFFFF;
+        if ((z & 0x2000000) != 0) z |= ~0x3FFFFFF;
+        int y = (int) packed & 0xFFF;
+        return new BlockPos(x, y, z);
+    }
+
     public BlockPos advance(ForgeDirection dir) {
         return new BlockPos(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ);
     }

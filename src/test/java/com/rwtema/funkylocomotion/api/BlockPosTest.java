@@ -21,6 +21,12 @@ public class BlockPosTest {
     }
 
     @Test
+    public void packedRoundTripHandlesNegativeCoordinates() {
+        BlockPos original = new BlockPos(-123456, 255, 654321);
+        assertEquals(original, BlockPos.fromLong(original.toLong()));
+    }
+
+    @Test
     public void advanceByUnknownSideIsANoOp() {
         BlockPos origin = new BlockPos(10, 64, -3);
 

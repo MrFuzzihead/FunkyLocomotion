@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import gnu.trove.map.hash.TLongObjectHashMap;
+
 import net.minecraft.block.Block;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
@@ -103,7 +105,7 @@ public class MoveManager {
                 dstBlocksToBeDestroyed.removeAll(srcBlocks);
             }
 
-            Map<BlockPos, Entry> dstTileEntries = new HashMap<BlockPos, Entry>();
+            TLongObjectHashMap<Entry> dstTileEntries = new TLongObjectHashMap<Entry>();
             Map<BlockPos, Integer> srcLightOpacity = new HashMap<BlockPos, Integer>();
 
             vars.put("dstTileEntries", dstTileEntries);
@@ -208,7 +210,7 @@ public class MoveManager {
 
                 srcChunks.add(BlockHelper.getChunk(srcWorld, srcPos));
 
-                dstTileEntries.put(dstPos, e);
+                dstTileEntries.put(dstPos.toLong(), e);
             }
             vars.put("Iterator", BLANK);
 
@@ -226,9 +228,9 @@ public class MoveManager {
 
                         p = p.advance(dir);
 
-                        if (!dstTileEntries.containsKey(p)) continue;
+                        if (!dstTileEntries.containsKey(p.toLong())) continue;
 
-                        Entry e = dstTileEntries.get(p);
+                        Entry e = dstTileEntries.get(p.toLong());
 
                         e.scheduledTickTime = (int) (tick.scheduledTime - k);
                         e.scheduledTickPriority = tick.priority;
@@ -246,7 +248,7 @@ public class MoveManager {
             for (BlockLink link : links) {
                 vars.put("Iterator", link);
                 IMoveFactory factory = FactoryRegistry.getFactory(srcWorld, link.srcPos);
-                dstTileEntries.get(link.dstPos).blockTag = factory.destroyBlock(srcWorld, link.srcPos);
+                dstTileEntries.get(link.dstPos.toLong()).blockTag = factory.destroyBlock(srcWorld, link.srcPos);
             }
             vars.put("Iterator", BLANK);
 
@@ -296,7 +298,7 @@ public class MoveManager {
             vars.put("tiles", tiles);
 
             section = "createTiles";
-            for (Entry e : dstTileEntries.values()) {
+            for (Entry e : dstTileEntries.valueCollection()) {
                 vars.put("Iterator", e);
                 dstWorld.setBlock(e.pos.x, e.pos.y, e.pos.z, BlockMoving.instance, 0, 0);
                 TileMovingServer tile = (TileMovingServer) dstWorld.getTileEntity(e.pos.x, e.pos.y, e.pos.z);
@@ -324,7 +326,7 @@ public class MoveManager {
             for (BlockLink link : links) {
                 vars.put("Iterator", BLANK);
                 BlockPos srcPos = link.srcPos;
-                if (srcWorld != dstWorld || !dstTileEntries.containsKey(srcPos)) {
+                if (srcWorld != dstWorld || !dstTileEntries.containsKey(srcPos.toLong())) {
                     srcWorld.setBlock(srcPos.x, srcPos.y, srcPos.z, BlockMoving.instance, 0, 0);
                     TileMovingServer tile = (TileMovingServer) srcWorld.getTileEntity(srcPos.x, srcPos.y, srcPos.z);
                     vars.put("Iterator2", tile);
@@ -344,7 +346,7 @@ public class MoveManager {
                             srcPos.y,
                             srcPos.z,
                             new MessageClearTile(srcPos));
-                        Entry e = dstTileEntries.get(link.dstPos);
+                        Entry e = dstTileEntries.get(link.dstPos.toLong());
                         tile.block = (NBTTagCompound) airBlockTag.copy();
                         if (e.description != null) tile.desc = (NBTTagCompound) e.description.copy();
                         else tile.desc = (NBTTagCompound) airDescTag.copy();
