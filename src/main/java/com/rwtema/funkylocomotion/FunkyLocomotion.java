@@ -46,7 +46,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
     modid = FunkyLocomotion.MODID,
     name = FunkyLocomotion.MODNAME,
     version = Tags.VERSION,
-    dependencies = "after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)")
+    dependencies = "required-after:CoFHCore;after:ForgeMultipart;after:Thaumcraft;after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)")
 public class FunkyLocomotion {
 
     public static final String MODID = "funkylocomotion";
