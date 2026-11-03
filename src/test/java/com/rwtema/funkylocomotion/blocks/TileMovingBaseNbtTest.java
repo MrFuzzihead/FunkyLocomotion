@@ -23,8 +23,7 @@ public class TileMovingBaseNbtTest {
         source.dir = 4;
         source.lightLevel = 7;
         source.lightOpacity = 200;
-        source.collisions = new AxisAlignedBB[] {
-            AxisAlignedBB.getBoundingBox(0.0, 0.0, 0.0, 1.0, 0.5, 1.0),
+        source.collisions = new AxisAlignedBB[] { AxisAlignedBB.getBoundingBox(0.0, 0.0, 0.0, 1.0, 0.5, 1.0),
             AxisAlignedBB.getBoundingBox(0.25, 0.5, 0.25, 0.75, 1.0, 0.75) };
         source.scheduledTickTime = 12;
         source.scheduledTickPriority = 2;

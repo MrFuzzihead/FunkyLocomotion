@@ -39,8 +39,10 @@ public class TileMovingServerDescriptionTest {
         assertEquals(3, firstTag.getByte("Dir"));
         assertEquals(9, firstTag.getByte("Light"));
         assertEquals(100, firstTag.getShort("Opacity"));
-        assertEquals(1, firstTag.getTagList("Collisions", 10)
-            .tagCount());
+        assertEquals(
+            1,
+            firstTag.getTagList("Collisions", 10)
+                .tagCount());
 
         tile.time = 6;
         Packet secondPacket = tile.getDescriptionPacket();

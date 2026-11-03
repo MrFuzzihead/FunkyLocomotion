@@ -10,12 +10,15 @@ public class TilePusherLimitsTest {
 
     @Test
     public void configValuesAreClampedToSafeRanges() {
-        assertEquals(TilePusher.MIN_MAX_TILES,
+        assertEquals(
+            TilePusher.MIN_MAX_TILES,
             TilePusher.clampConfig(-1, TilePusher.MIN_MAX_TILES, TilePusher.MAX_MAX_TILES));
-        assertEquals(TilePusher.MAX_MAX_TILES,
+        assertEquals(
+            TilePusher.MAX_MAX_TILES,
             TilePusher.clampConfig(1_000_000, TilePusher.MIN_MAX_TILES, TilePusher.MAX_MAX_TILES));
         assertEquals(1024, TilePusher.clampConfig(1024, TilePusher.MIN_MAX_TILES, TilePusher.MAX_MAX_TILES));
-        assertEquals(TilePusher.MIN_POWER_PER_TILE,
+        assertEquals(
+            TilePusher.MIN_POWER_PER_TILE,
             TilePusher.clampConfig(0, TilePusher.MIN_POWER_PER_TILE, TilePusher.MAX_POWER_PER_TILE));
     }
 
@@ -23,8 +26,7 @@ public class TilePusherLimitsTest {
     public void capacityDoesNotOverflowForLargeConfigs() {
         assertEquals(1024 * 250, TilePusher.energyCapacity(1024, 250));
         assertEquals(Integer.MAX_VALUE, TilePusher.energyCapacity(8192, 1_000_000));
-        assertEquals(TilePusher.MIN_MAX_TILES * TilePusher.MIN_POWER_PER_TILE,
-            TilePusher.energyCapacity(-5, -5));
+        assertEquals(TilePusher.MIN_MAX_TILES * TilePusher.MIN_POWER_PER_TILE, TilePusher.energyCapacity(-5, -5));
     }
 
     @Test

@@ -10,6 +10,7 @@ package com.rwtema.funkylocomotion.rendering;
  * disappear for the rest of the mover's lifetime.
  */
 enum MoverRenderResult {
+
     CACHE,
     RETRY,
     SKIP;

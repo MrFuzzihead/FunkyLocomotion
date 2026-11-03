@@ -24,7 +24,9 @@ public class BlockSliderRenderSideTest {
         for (int renderSide = 0; renderSide < 6; renderSide++) {
             for (int side = 0; side < 6; side++) {
                 boolean expected = side == renderSide || side == Facing.oppositeSide[renderSide];
-                assertEquals("renderSide=" + renderSide + ", side=" + side, expected,
+                assertEquals(
+                    "renderSide=" + renderSide + ", side=" + side,
+                    expected,
                     BlockSlider.isRenderSideVisible(renderSide, side));
             }
         }

@@ -2,11 +2,11 @@ package com.rwtema.funkylocomotion.blocks;
 
 import static org.junit.Assert.assertEquals;
 
+import net.minecraftforge.common.util.ForgeDirection;
+
 import org.junit.Test;
 
 import com.rwtema.funkylocomotion.api.BlockPos;
-
-import net.minecraftforge.common.util.ForgeDirection;
 
 public class TileTeleportTest {
 
@@ -30,8 +30,7 @@ public class TileTeleportTest {
                 BlockPos dstAnchor = dstHome.advance(TileTeleport.getTeleportFacing(dstMeta));
                 BlockPos moved = new BlockPos(srcAnchor.x + 2, srcAnchor.y - 1, srcAnchor.z + 4);
 
-                BlockPos result = TileTeleport
-                    .getDestinationPos(srcHome, srcMeta, dstHome, dstMeta, moved);
+                BlockPos result = TileTeleport.getDestinationPos(srcHome, srcMeta, dstHome, dstMeta, moved);
 
                 assertEquals(dstAnchor.x + 2, result.x);
                 assertEquals(dstAnchor.y - 1, result.y);

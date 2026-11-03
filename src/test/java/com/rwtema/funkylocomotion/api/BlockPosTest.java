@@ -2,9 +2,9 @@ package com.rwtema.funkylocomotion.api;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.junit.Test;
 
 public class BlockPosTest {
 
