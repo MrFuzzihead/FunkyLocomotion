@@ -48,7 +48,7 @@ and `ByteBuf` without launching a client or a server.
 | `BlockMovingSideTest` | Server-side truck creation returns `TileMovingServer`, independent of thread names. |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
-| `MoverRenderResultTest` | A failed block render is retried next frame; a successful empty render is skipped; a successful render with geometry is cached. |
+| `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
 | `TilePusherLimitsTest` | Config clamping, energy capacity/cost overflow protection, and the inclusive BFS block limit. |
 
 ### What the headless tests cannot prove
