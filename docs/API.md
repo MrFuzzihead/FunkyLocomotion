@@ -44,5 +44,6 @@ Register custom proxies with `registerDescription(proxy, fallback)`, where
 
 Use the eye wrench on a placed teleporter to copy its ID onto the wrench. Use
 the wrench on another teleporter to apply that ID. Both teleporters then share
-a link. IDs are non-zero and deduplicated within a server session; items keep
-their ID in NBT when broken.
+a link. IDs are non-zero, deduplicated within a server session, and allocated
+through `TeleportIdData`, a `WorldSavedData` registry that keeps issued IDs
+reserved across restarts. Items keep their ID in NBT when broken.

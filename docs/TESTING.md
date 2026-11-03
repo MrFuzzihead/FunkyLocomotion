@@ -60,6 +60,7 @@ and `ByteBuf` without launching a client or a server.
 | `ItemHelperTest` | Null and ordinary items are not wrenches (no eager optional API initialization). |
 | `MovePermissionRegistryTest` | Registered `IMovePermissions` can veto a move; no permissions means allowed. |
 | `MoveSourceHelperTest` | Multi-storage energy payment and clamped booster move times. |
+| `TeleportIdDataTest` | Teleporter pairs retain one id, released ids stay reserved across NBT reloads, and zero requests always allocate a fresh id. |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
@@ -390,6 +391,10 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       player, and verify the pusher refuses; allow it and verify it moves.
 - [ ] Use the eye wrench on teleporter A, then on teleporter B; both share an ID
       and move a payload.
+- [ ] Place a third teleporter with the same id; it receives a fresh id. Break
+      the pair, restart the server, and verify the old id is not silently reused.
+- [ ] Open the Forge mod config GUI for Funky Locomotion; edit values, close,
+      and verify the new values apply (or use `/fl reload`).
 - [ ] Register an `IMoveFactory`/`IMoveChecker`/`IDescriptionProxy` through
       `FunkyLocomotionAPI` from a test mod and verify each hook is used.
 - [ ] Move a structure with a booster; the shared energy helper still charges
