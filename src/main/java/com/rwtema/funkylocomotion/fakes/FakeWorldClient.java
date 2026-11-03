@@ -21,7 +21,6 @@ import net.minecraft.world.WorldSettings;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
-import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.WorldEvent;
@@ -53,8 +52,7 @@ public class FakeWorldClient extends WorldClient {
     }
 
     public static boolean isValid(World world) {
-        return world != null && world.provider != null
-            && DimensionManager.isDimensionRegistered(world.provider.dimensionId);
+        return world != null && world.provider != null;
     }
 
     public static FakeWorldClient getFakeWorldWrapper(World world) {
@@ -148,6 +146,16 @@ public class FakeWorldClient extends WorldClient {
     @SideOnly(Side.CLIENT)
     public int getLightBrightnessForSkyBlocks(int x, int y, int z, int minBrightness) {
         return world.getLightBrightnessForSkyBlocks(x, y, z, minBrightness);
+    }
+
+    @Override
+    public int getBlockLightValue(int x, int y, int z) {
+        return world.getBlockLightValue(x, y, z);
+    }
+
+    @Override
+    public int getSavedLightValue(EnumSkyBlock type, int x, int y, int z) {
+        return world.getSavedLightValue(type, x, y, z);
     }
 
     @Override
