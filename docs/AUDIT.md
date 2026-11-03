@@ -50,10 +50,11 @@ Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass af
 - `TileMovingClient` now uses a dimension-aware tile cache, skips client-side light recalculation, handles unknown block ids, and matches blacklisted classes by assignability.
 - The slider, frame, wrench and moving-block paths no longer mutate client worlds or duplicate collision/particle state; the `_Immovable` typo has a corrected alias.
 - Descriptor fallback/`DescID` handling, teleporter cache cleanup, mover tick-phase handling, pusher power NBT, the logger name/format, and the CoFH dependency declaration were corrected.
+- `EntityMovingEventHandler` now delegates to vanilla `Entity.moveEntity` instead of a divergent copy, and clears its movement map only on the END tick phase.
 
 Each item has a focused JUnit regression test where the behaviour is reachable without a live world. A real dedicated server harness (`./gradlew runServer -PflHarness=true`) covers the world/chunk/move paths; see [`TESTING.md`](TESTING.md).
 
-Remaining P1/P2 work includes the divergent `EntityMovingEventHandler` movement copy, `MoveManager`'s static crash context/global synchronization, versioned snapshot formats with legacy readers, FMP describer registration, silent-write `onBlockAdded`/bounds handling, and `breakBlockWithDrop` tool/notification semantics.
+Remaining P1/P2 work includes `MoveManager`'s static crash context/global synchronization, versioned snapshot formats with legacy readers, FMP describer registration, silent-write `onBlockAdded`/bounds handling, and `breakBlockWithDrop` tool/notification semantics.
 
 ---
 

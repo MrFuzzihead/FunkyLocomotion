@@ -278,6 +278,18 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       selects that face for both push and pull variants.
 - [ ] Use the hammer wrench on a frame face; the frame changes once, not twice.
 
+### Entities on moving structures
+
+- [ ] Stand on a moving platform; the player moves with it and keeps ground
+      contact (no floating or falling through).
+- [ ] Sneak at the edge of a moving platform; the player does not slide off.
+- [ ] Put a mob, item entity, minecart/boat and a pressure plate on a moving
+      platform; collisions, ground state and sounds behave like vanilla.
+- [ ] Move a platform under an entity in a web/water; the web slowdown and
+      fall/step logic still match vanilla.
+- [ ] Move a platform up/down; no fall damage/fall state is triggered by the
+      platform motion itself.
+
 ### Teleporters and pushers
 
 - [ ] Open a chest at the destination of a teleport; the GUI closes before the
