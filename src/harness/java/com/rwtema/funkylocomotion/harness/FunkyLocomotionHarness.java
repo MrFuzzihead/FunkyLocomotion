@@ -73,6 +73,7 @@ public class FunkyLocomotionHarness {
         } else if (ticks == 120) {
             verifyTeleporterTest();
             checkPusherLimit();
+            FunkyLocomotion.reloadConfig();
             passAndShutdown();
         }
     }
