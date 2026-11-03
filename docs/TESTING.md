@@ -58,6 +58,7 @@ and `ByteBuf` without launching a client or a server.
 | `ProxyRegistryTest` | Proxies are found directly and through an interface on a superclass; unrelated objects return null. |
 | `ItemBlockTeleporterTest` | Generated teleporter IDs are never zero and stay in the 20-bit range. |
 | `ItemHelperTest` | Null and ordinary items are not wrenches (no eager optional API initialization). |
+| `MovePermissionRegistryTest` | Registered `IMovePermissions` can veto a move; no permissions means allowed. |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
@@ -359,6 +360,24 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
 - [ ] Register a move factory for a block superclass; subclasses use it.
 - [ ] Register a sticky proxy for an interface implemented by a block's
       superclass; sticky movement still works.
+
+## P3 checks
+
+- [ ] Place a pusher as a player, register an `IMovePermissions` that denies
+      that player, and verify the pusher refuses to move; remove the checker and
+      verify it moves again.
+- [ ] Break a teleporter with a pickaxe and with pick-block; the dropped/picked
+      item keeps its teleporter ID and stats/exhaustion are applied once.
+- [ ] Change a slider's facing with the wrench; the slide direction resets
+      deterministically and persists through save/reload.
+- [ ] Move a structure using a block implementing `IAdvStickyBlock`; the extra
+      positions are included in the move.
+- [ ] Verify crash reports still render a readable move context if a custom
+      block's `toString()`/collection throws.
+- [ ] Save a mover mid-animation; the tile's time is persisted within the
+      throttled chunk-save interval and resumes correctly.
+- [ ] Start a mover with no description data; the client receives a DNR packet
+      instead of rendering a stale/invisible tile.
 
 ## Regression commands before merging the branch
 

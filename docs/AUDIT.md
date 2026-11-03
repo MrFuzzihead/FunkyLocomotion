@@ -5,7 +5,7 @@
 - **Baseline:** `main` @ `6310790` (“Update build tooling and Gradle wrapper”)
 - **Scope:** `src/main/java`, `src/api/java`, `src/main/resources`, Gradle/mod metadata
 - **Focus:** Angelica (Celeritas + GL 3.3 core/GLSM) and Hodgepodge (GTNH), plus FMP, Thaumcraft, CoFH and general GTNH modpack compatibility
-- **Status:** the P0, P1 and P2 batches are implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
+- **Status:** the P0, P1, P2 and P3 batches are implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
 
 All line numbers refer to the baseline above. They will drift as code is refactored; use the class/method names as the stable reference.
 
@@ -54,10 +54,11 @@ Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass af
 - Block snapshots now use `MoveSnapshot`: a shared versioned reader/writer with registry-name + numeric-id fallback and legacy numeric/string compatibility for both server move data and client descriptions.
 - `MoveManager` uses a per-move crash context map instead of a shared static map, and `startMoving` is no longer globally synchronized.
 - P2: IMC move blacklist + `IMoveChecker` registry, hierarchy-aware factory/proxy lookups, deterministic word dictionary, safer wrench/frame/teleporter items, recipe cleanup, FMP describer registration, texture-reload cache invalidation, particle batch safety, fake-world lighting/custom dimensions, direct-write/drop hooks, optional-mod startup guards, and GL state restoration.
+- P3: removed dead classes, wired `IAdvStickyBlock`, converted entity movement tracking to weak sets, improved `BlockPos` hashing, throttled mover chunk-save marks, guarded DNR descriptions and crash formatting, restored TESR GL state, used vanilla teleporter drop/harvest hooks, reset slider slide direction on facing changes, aligned pusher defaults, and wired `IMovePermissions` ownership into pushers/teleporters.
 
 Each item has a focused JUnit regression test where the behaviour is reachable without a live world. A real dedicated server harness (`./gradlew runServer -PflHarness=true`) covers the world/chunk/move paths; see [`TESTING.md`](TESTING.md).
 
-Remaining items are P3/feature work: `TilePusher`/`TileTeleport` shared energy-source refactoring, owner/`IMovePermissions` wiring, teleporter pairing UI/uniqueness, config reload for existing tiles, `renderBlackList` configuration, and broader API/test polish.
+Remaining items are feature work rather than correctness cleanup: `TilePusher`/`TileTeleport` shared energy-source refactoring, teleporter pairing UI and cross-session ID uniqueness, config reload for existing tiles, `renderBlackList` configuration, immutable/packed position keys, and broader API/test polish.
 
 ---
 
