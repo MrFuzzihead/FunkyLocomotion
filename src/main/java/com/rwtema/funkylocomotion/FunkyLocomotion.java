@@ -131,19 +131,25 @@ public class FunkyLocomotion {
             }
         }
 
-        try {
-            Class<?> nodeClazz = Class.forName("thaumcraft.api.nodes.INode");
-            Block b = (Block) Block.blockRegistry.getObject("Thaumcraft:blockAiry");
-            if (b != Blocks.air && nodeClazz != null) FactoryRegistry.moveFactoryMapBlock.put(b, new NodeMover());
-        } catch (ClassNotFoundException ignore) {
-
+        if (Loader.isModLoaded("Thaumcraft")) {
+            try {
+                Class<?> nodeClazz = Class.forName("thaumcraft.api.nodes.INode");
+                Block b = (Block) Block.blockRegistry.getObject("Thaumcraft:blockAiry");
+                if (b != null && b != Blocks.air && nodeClazz != null) {
+                    FactoryRegistry.moveFactoryMapBlock.put(b, new NodeMover());
+                }
+            } catch (Throwable t) {
+                LogHelper.errorThrowable("Unable to initialize Thaumcraft node support", t);
+            }
         }
 
-        try {
-            Class.forName("cofh.api.block.IBlockAppearance");
-            COFHStickiness.register();
-        } catch (ClassNotFoundException ignore) {
-
+        if (Loader.isModLoaded("CoFHCore")) {
+            try {
+                Class.forName("cofh.api.block.IBlockAppearance");
+                COFHStickiness.register();
+            } catch (Throwable t) {
+                LogHelper.errorThrowable("Unable to initialize CoFH appearance support", t);
+            }
         }
     }
 
