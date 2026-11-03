@@ -116,9 +116,9 @@ public class FunkyLocomotionHarness {
     private void verifyPusherTest() {
         check(pusherStarted, "pusher move was not started");
         check(world.getBlock(PUSH_X, Y, 0) == FunkyLocomotion.pusher, "the pusher itself moved");
-        check(world.isAirBlock(1, Y, 0), "source frame at x=1 is still present");
+        check(world.isAirBlock(1, Y, 0), "source frame at x=1 is still present: " + describeBlock(1, Y, 0));
         for (int x = 2; x <= 4; x++) {
-            check(isFrame(x, Y, 0), "expected a moved frame at x=" + x);
+            check(isFrame(x, Y, 0), "expected a moved frame at x=" + x + " but found " + describeBlock(x, Y, 0));
         }
     }
 
@@ -200,6 +200,12 @@ public class FunkyLocomotionHarness {
         } finally {
             TilePusher.maxTiles = previousLimit;
         }
+    }
+
+    private String describeBlock(int x, int y, int z) {
+        Block block = world.getBlock(x, y, z);
+        String name = block == null ? "null" : String.valueOf(Block.blockRegistry.getNameForObject(block));
+        return name + " meta=" + world.getBlockMetadata(x, y, z);
     }
 
     private boolean isFrame(int x, int y, int z) {

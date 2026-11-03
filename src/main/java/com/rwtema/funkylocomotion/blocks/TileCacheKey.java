@@ -15,11 +15,7 @@ public final class TileCacheKey {
     final int z;
 
     public TileCacheKey(World world, int x, int y, int z) {
-        this(
-            world == null || world.provider == null ? Integer.MIN_VALUE : world.provider.dimensionId,
-            x,
-            y,
-            z);
+        this(world == null || world.provider == null ? Integer.MIN_VALUE : world.provider.dimensionId, x, y, z);
     }
 
     public TileCacheKey(int dimension, int x, int y, int z) {

@@ -29,6 +29,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.LogHelper;
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 import com.rwtema.funkylocomotion.api.IMoveFactory;
@@ -36,7 +37,6 @@ import com.rwtema.funkylocomotion.blocks.BlockMoving;
 import com.rwtema.funkylocomotion.blocks.TileMovingServer;
 import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.factory.FactoryRegistry;
-import com.rwtema.funkylocomotion.LogHelper;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.network.MessageClearTile;
@@ -188,7 +188,8 @@ public class MoveManager {
                     for (IDescriptionProxy d : DescriptorRegistry.getProxyList()) {
                         if (d.canHandleTile(tile)) {
                             d.addDescriptionToTags(descriptor, tile);
-                            if (!d.getID().isEmpty()) descriptor.setString("DescID", d.getID());
+                            if (!d.getID()
+                                .isEmpty()) descriptor.setString("DescID", d.getID());
                             flag = true;
                             break;
                         }

@@ -103,7 +103,8 @@ public class BlockHelper {
             }
 
             if (oldLightOpacity >= 0 && j2 != oldLightOpacity
-                && (j2 < oldLightOpacity || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0
+                && (j2 < oldLightOpacity
+                    || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0
                     || chunk.getSavedLightValue(EnumSkyBlock.Block, pos.x & 15, pos.y, pos.z & 15) > 0)) {
                 chunk.propagateSkylightOcclusion(pos.x & 15, pos.z & 15);
             }

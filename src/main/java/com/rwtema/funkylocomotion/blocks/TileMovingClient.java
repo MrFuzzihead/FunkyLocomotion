@@ -13,8 +13,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.api.BlockPos;
@@ -96,8 +96,8 @@ public class TileMovingClient extends TileMovingBase {
 
         if (this.dir >= 0 && this.dir < 8 && this.dir != 6) {
             ForgeDirection d = ForgeDirection.getOrientation(this.dir);
-            WeakReference<TileEntity> ref = cachedTiles.remove(
-                new TileCacheKey(worldObj, xCoord - d.offsetX, yCoord - d.offsetY, zCoord - d.offsetZ));
+            WeakReference<TileEntity> ref = cachedTiles
+                .remove(new TileCacheKey(worldObj, xCoord - d.offsetX, yCoord - d.offsetY, zCoord - d.offsetZ));
 
             if (ref != null) tile = ref.get();
         }
@@ -166,7 +166,8 @@ public class TileMovingClient extends TileMovingBase {
 
     public static void clearCachedTiles(World world) {
         int dimension = world == null || world.provider == null ? Integer.MIN_VALUE : world.provider.dimensionId;
-        cachedTiles.keySet().removeIf(key -> key.dimension == dimension);
+        cachedTiles.keySet()
+            .removeIf(key -> key.dimension == dimension);
     }
 
     @SideOnly(Side.CLIENT)

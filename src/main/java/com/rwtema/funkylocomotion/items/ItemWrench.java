@@ -179,8 +179,7 @@ public class ItemWrench extends Item {
 
                             Block blockingBlock = world.getBlock(dx2, dy2, dz2);
 
-                            if (isInaccessible(world, face, hitX, hitY, hitZ, dx2, dy2, dz2, blockingBlock))
-                                continue;
+                            if (isInaccessible(world, face, hitX, hitY, hitZ, dx2, dy2, dz2, blockingBlock)) continue;
                         }
                     }
 
@@ -192,8 +191,8 @@ public class ItemWrench extends Item {
         return true;
     }
 
-    private boolean isInaccessible(World world, int face, float hitX, float hitY, float hitZ, int dx2, int dy2,
-        int dz2, Block blockingBlock) {
+    private boolean isInaccessible(World world, int face, float hitX, float hitY, float hitZ, int dx2, int dy2, int dz2,
+        Block blockingBlock) {
         return !blockingBlock.isAir(world, dx2, dy2, dz2)
             && blockingBlock.getCollisionBoundingBoxFromPool(world, dx2, dy2, dz2) != null
             && blockingBlock.canCollideCheck(world.getBlockMetadata(dx2, dy2, dz2), false)
