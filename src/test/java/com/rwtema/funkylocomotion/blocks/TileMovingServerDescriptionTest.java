@@ -54,10 +54,13 @@ public class TileMovingServerDescriptionTest {
     }
 
     @Test
-    public void missingDescriptionStillReturnsNoPacket() {
+    public void missingDescriptionStillReturnsAnEmptyDoNotRenderPacket() {
         TileMovingServer tile = new TileMovingServer();
         tile.desc = null;
 
-        assertEquals(null, tile.getDescriptionPacket());
+        Packet packet = tile.getDescriptionPacket();
+        assertTrue(packet instanceof S35PacketUpdateTileEntity);
+        NBTTagCompound tag = ((S35PacketUpdateTileEntity) packet).func_148857_g();
+        assertTrue(tag.getBoolean("DNR"));
     }
 }

@@ -26,7 +26,7 @@ public final class BlockPos {
 
     @Override
     public int hashCode() {
-        return 256 * x + 7936 * z + y;
+        return (x * 31 + z) * 31 + y;
     }
 
     public BlockPos(TileEntity tile) {

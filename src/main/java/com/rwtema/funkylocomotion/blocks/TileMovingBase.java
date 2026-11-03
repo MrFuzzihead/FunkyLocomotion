@@ -2,7 +2,6 @@ package com.rwtema.funkylocomotion.blocks;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.entity.Entity;
@@ -157,17 +156,13 @@ public abstract class TileMovingBase extends TileEntity {
     public void updateEntity() {
         if (maxTime == 0) return;
 
-        if (worldObj.isRemote) {
-            time = time + 1 - 1;
-        }
-
         Vec3 mov = getMovVec();
 
         Set<Entity> entityList = new HashSet<Entity>();
 
         time++;
 
-        for (AxisAlignedBB bb : getTransformedColisions()) {
+        for (AxisAlignedBB bb : getTransformedCollisions()) {
             List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, bb.expand(0, 0.1, 0));
             entityList.addAll(entities);
         }
@@ -175,9 +170,9 @@ public abstract class TileMovingBase extends TileEntity {
         for (Entity a : entityList) {
 
             if (!a.isDead) {
-                Map<Entity, Vec3> map = EntityMovingEventHandler.getMovementMap(side);
-                if (!map.containsKey(a)) {
-                    for (AxisAlignedBB bb : getTransformedColisions()) {
+                java.util.Set<Entity> moved = EntityMovingEventHandler.getMovementSet(side);
+                if (!moved.contains(a)) {
+                    for (AxisAlignedBB bb : getTransformedCollisions()) {
                         if (a.boundingBox.intersectsWith(bb)) {
                             if (a.boundingBox.minY > bb.maxY - 0.2) {
                                 a.boundingBox.offset(0, bb.maxY - a.boundingBox.minY, 0);
@@ -189,7 +184,7 @@ public abstract class TileMovingBase extends TileEntity {
 
                     EntityMovingEventHandler.moveEntity(a, mov.xCoord, mov.yCoord, mov.zCoord);
 
-                    map.put(a, null);
+                    moved.add(a);
                 }
 
             }
@@ -223,7 +218,7 @@ public abstract class TileMovingBase extends TileEntity {
         return bb;
     }
 
-    public AxisAlignedBB[] getTransformedColisions() {
+    public AxisAlignedBB[] getTransformedCollisions() {
         AxisAlignedBB[] tbbs = new AxisAlignedBB[collisions.length];
         double h = offset(false);
         ForgeDirection dir = ForgeDirection.getOrientation(this.dir);
@@ -232,6 +227,14 @@ public abstract class TileMovingBase extends TileEntity {
                 .offset(xCoord, yCoord, zCoord);
         }
         return tbbs;
+    }
+
+    /**
+     * @deprecated Typo kept for binary compatibility. Use {@link #getTransformedCollisions()}.
+     */
+    @Deprecated
+    public AxisAlignedBB[] getTransformedColisions() {
+        return getTransformedCollisions();
     }
 
     public float progress() {

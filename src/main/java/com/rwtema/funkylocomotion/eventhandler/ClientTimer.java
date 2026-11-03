@@ -9,7 +9,7 @@ public class ClientTimer {
 
     @SubscribeEvent
     public void getTimer(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) Proxy.renderTimeOffset = event.renderTickTime % 1;
+        if (event.phase == TickEvent.Phase.START) Proxy.renderTimeOffset = event.renderTickTime;
     }
 
 }

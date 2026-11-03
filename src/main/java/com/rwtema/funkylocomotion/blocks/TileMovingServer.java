@@ -25,12 +25,11 @@ public class TileMovingServer extends TileMovingBase {
 
     @Override
     public Packet getDescriptionPacket() {
-        if (desc == null) return null;
-
         // S35PacketUpdateTileEntity serializes its tag on the Netty thread, while
         // this method runs on the server thread. Never hand out the live desc tag:
         // the next tick mutates it while the previous packet is still being written.
-        NBTTagCompound packetTag = (NBTTagCompound) desc.copy();
+        NBTTagCompound packetTag = desc == null ? new NBTTagCompound() : (NBTTagCompound) desc.copy();
+        if (desc == null) packetTag.setBoolean("DNR", true);
         packetTag.setInteger("Time", time);
         packetTag.setInteger("MaxTime", maxTime);
         packetTag.setByte("Dir", (byte) dir);
@@ -68,7 +67,11 @@ public class TileMovingServer extends TileMovingBase {
         if (time < maxTime) {
 
             super.updateEntity();
-            this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
+            // The only changing NBT is the animation time; mark the chunk at a
+            // save-friendly interval instead of every single tick.
+            if (this.time % 20 == 0) {
+                this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
+            }
         } else if (!finishing) MoveManager.finishMoving();
     }
 
