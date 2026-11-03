@@ -47,6 +47,10 @@ and `ByteBuf` without launching a client or a server.
 | `MessageClearTileTest` | Packet coordinate round-trip, including negative and large values. |
 | `MessageClearTileHandlerTest` | The client handler removes the source tile through `World.removeTileEntity` and drops it from `loadedTileEntityList`. |
 | `BlockMovingSideTest` | Server-side truck creation returns `TileMovingServer`, independent of thread names. |
+| `BlockSliderFacingTest` | Slider wrench clicks flip the current face and select other faces for both push and pull metadata. |
+| `TilePusherNbtTest` | Pusher power state is restored from both the current `powered` key and the legacy `Powered` key. |
+| `TileCacheKeyTest` | Client tile-cache keys include the dimension as well as coordinates. |
+| `DescriptorRegistryTest` | Missing/unknown description ids fall back to the vanilla descriptor. |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
@@ -241,6 +245,48 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       and the wrench still work.
 - [ ] `./gradlew build` succeeds from a clean checkout (the new Thaumcraft
       `dev` dependency is resolvable from the configured repositories).
+
+## Additional checks for the P1 batch
+
+### Move finalisation
+
+- [ ] Move a frame/chest and verify there is no stone block left behind, even if
+      the destination block recreation fails partway through.
+- [ ] Save/restart while a move is finishing; the mover is either completed once
+      or retried, not duplicated.
+- [ ] Move a light-emitting/transparent block; the destination light is correct
+      and the source does not retain stale skylight.
+- [ ] Trigger a failing tile recreation (e.g. a deliberately broken optional
+      mod tile) and verify other movers in the same batch still finish.
+- [ ] Move a large frame and confirm the client does not receive a full chunk
+      resend for every moved block.
+
+### Descriptions and client cache
+
+- [ ] Move a vanilla chest, a sign, and a mod TESR block. Vanilla/sign
+      descriptions still render; mod descriptors still use their custom format.
+- [ ] Move blocks back and forth between dimensions; no tile from the previous
+      dimension is reused at the same coordinates.
+- [ ] Move the same block repeatedly; no ghost tile entity remains and the cache
+      does not grow across a world unload.
+
+### Wrench/frame/slider interaction
+
+- [ ] Wrench a 5x5 area of frames and pushers; only the server mutates the world,
+      no client-side double activation/flicker.
+- [ ] Click the front face of a slider; it flips, and clicking a different face
+      selects that face for both push and pull variants.
+- [ ] Use the hammer wrench on a frame face; the frame changes once, not twice.
+
+### Teleporters and pushers
+
+- [ ] Open a chest at the destination of a teleport; the GUI closes before the
+      destination tile is destroyed.
+- [ ] Power a pusher, save/reload, and verify its powered state persists.
+- [ ] Start the pack without CoFHCore; Forge now reports the missing required
+      dependency instead of a `NoClassDefFoundError` on placement.
+- [ ] Check the log uses the `funkylocomotion` logger and shows formatted
+      messages (not just the first argument).
 
 ## Regression commands before merging the branch
 

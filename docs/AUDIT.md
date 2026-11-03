@@ -5,7 +5,7 @@
 - **Baseline:** `main` @ `6310790` (“Update build tooling and Gradle wrapper”)
 - **Scope:** `src/main/java`, `src/api/java`, `src/main/resources`, Gradle/mod metadata
 - **Focus:** Angelica (Celeritas + GL 3.3 core/GLSM) and Hodgepodge (GTNH), plus FMP, Thaumcraft, CoFH and general GTNH modpack compatibility
-- **Status:** the P0 batch is implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
+- **Status:** the P0 and initial P1 batches are implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
 
 All line numbers refer to the baseline above. They will drift as code is refactored; use the class/method names as the stable reference.
 
@@ -44,8 +44,16 @@ Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass af
 - `ChunkRerenderer` no longer indexes `RenderGlobal.worldRenderers`; it only calls `markBlockForUpdate`, and `TileMovingClient` is registered as an Angelica dynamic-bounds class.
 - `FakeWorldClient` uses a concurrent/synchronized cache, and non-mover lookups delegate to the real world; `getRenderBoundingBox` no longer constructs a fake world and handles zero-duration/teleport scaling.
 - `MoveCheckReflector` treats `LinkageError` (client-only method signatures on a dedicated server) as movable without spamming a stack trace.
+- `BlockHelper.postUpdateBlock` now uses the replaced block's actual light opacity (and skips light propagation when it is unknown), and guards unloaded chunks.
+- `MoveManager.finishMoving` no longer does the air→stone→real-block toggle, removes the full-chunk resend, is idempotent per tile, catches/reports per-tile failures, and cleans up before recreating.
+- `MoveManager.startMoving` uses flag `0` for the no-update phase, records source light opacity, and closes destination inventories/watchers during teleports.
+- `TileMovingClient` now uses a dimension-aware tile cache, skips client-side light recalculation, handles unknown block ids, and matches blacklisted classes by assignability.
+- The slider, frame, wrench and moving-block paths no longer mutate client worlds or duplicate collision/particle state; the `_Immovable` typo has a corrected alias.
+- Descriptor fallback/`DescID` handling, teleporter cache cleanup, mover tick-phase handling, pusher power NBT, the logger name/format, and the CoFH dependency declaration were corrected.
 
 Each item has a focused JUnit regression test where the behaviour is reachable without a live world. A real dedicated server harness (`./gradlew runServer -PflHarness=true`) covers the world/chunk/move paths; see [`TESTING.md`](TESTING.md).
+
+Remaining P1/P2 work includes the divergent `EntityMovingEventHandler` movement copy, `MoveManager`'s static crash context/global synchronization, versioned snapshot formats with legacy readers, FMP describer registration, silent-write `onBlockAdded`/bounds handling, and `breakBlockWithDrop` tool/notification semantics.
 
 ---
 
