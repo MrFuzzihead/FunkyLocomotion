@@ -18,9 +18,11 @@ import com.rwtema.funkylocomotion.blocks.TileMovingServer;
 import com.rwtema.funkylocomotion.blocks.TilePusher;
 import com.rwtema.funkylocomotion.blocks.TileSlider;
 import com.rwtema.funkylocomotion.blocks.TileTeleport;
+import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.dispenser.FrameDispenserAcion;
 import com.rwtema.funkylocomotion.dispenser.WrenchDispenserAction;
 import com.rwtema.funkylocomotion.factory.FactoryRegistry;
+import com.rwtema.funkylocomotion.fmp.FMPDescriber;
 import com.rwtema.funkylocomotion.fmp.FMPMover;
 import com.rwtema.funkylocomotion.fmp.FMPStickness;
 import com.rwtema.funkylocomotion.items.ItemBlockFrame;
@@ -122,8 +124,11 @@ public class FunkyLocomotion {
     public void init(FMLInitializationEvent event) {
         if (Loader.isModLoaded("ForgeMultipart")) {
             Block b = (Block) Block.blockRegistry.getObject("ForgeMultipart:block");
-            FactoryRegistry.moveFactoryMapBlock.put(b, new FMPMover());
-            FMPStickness.init(b);
+            if (b != null && b != Blocks.air) {
+                DescriptorRegistry.register(new FMPDescriber(), false);
+                FactoryRegistry.moveFactoryMapBlock.put(b, new FMPMover());
+                FMPStickness.init(b);
+            }
         }
 
         try {
