@@ -31,7 +31,7 @@ public abstract class TileMovingBase extends TileEntity {
     public NBTTagCompound desc;
     public int dir = -1;
     public int lightLevel = 0;
-    public int lightOpacity = 255;
+    public int lightOpacity = 0;
     public int scheduledTickTime = -1;
     public int scheduledTickPriority;
 
@@ -81,36 +81,54 @@ public abstract class TileMovingBase extends TileEntity {
     @Override
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
+        readMoveDataFromNBT(tag);
+    }
 
+    /**
+     * Reads only the mover-specific fields. Split out from {@link #readFromNBT(NBTTagCompound)}
+     * so the persistence format can be tested without a registered tile entity id.
+     */
+    protected void readMoveDataFromNBT(NBTTagCompound tag) {
         block = tag.getCompoundTag("BlockTag");
         desc = tag.getCompoundTag("DescTag");
         time = tag.getInteger("Time");
         maxTime = tag.getInteger("MaxTime");
-        dir = tag.getByte("Dir");
+        dir = tag.hasKey("Dir") ? tag.getByte("Dir") : -1;
 
         isAir = block.hasNoTags();
 
-        if (tag.hasKey("Collisions", 10)) collisions = AxisTags(tag.getTagList("Collisions", 10));
+        collisions = tag.hasKey("Collisions", 9) ? AxisTags(tag.getTagList("Collisions", 10)) : blank;
 
-        lightLevel = tag.getByte("Light");
-        lightOpacity = tag.getShort("Opacity");
+        lightLevel = clamp(tag.hasKey("Light") ? tag.getByte("Light") : 0, 0, 15);
+        lightOpacity = clamp(tag.hasKey("Opacity") ? tag.getShort("Opacity") : 0, 0, 255);
 
-        if (tag.hasKey("TimeTime", 3)) {
+        if (tag.hasKey("TickTime", 3)) {
             scheduledTickTime = tag.getInteger("TickTime");
             scheduledTickPriority = tag.getInteger("TickPriority");
+        } else {
+            scheduledTickTime = -1;
+            scheduledTickPriority = 0;
         }
     }
 
     @Override
     public void writeToNBT(NBTTagCompound tag) {
         super.writeToNBT(tag);
-        tag.setTag("BlockTag", block);
-        tag.setTag("DescTag", desc);
+        writeMoveDataToNBT(tag);
+    }
+
+    /**
+     * Writes only the mover-specific fields. Split out from {@link #writeToNBT(NBTTagCompound)}
+     * so the persistence format can be tested without a registered tile entity id.
+     */
+    protected void writeMoveDataToNBT(NBTTagCompound tag) {
+        tag.setTag("BlockTag", block != null ? block : new NBTTagCompound());
+        tag.setTag("DescTag", desc != null ? desc : new NBTTagCompound());
         tag.setInteger("Time", time);
         tag.setInteger("MaxTime", maxTime);
         tag.setByte("Dir", (byte) dir);
 
-        if (collisions.length > 0) tag.setTag("Collisions", TagsAxis(collisions));
+        if (collisions != null && collisions.length > 0) tag.setTag("Collisions", TagsAxis(collisions));
 
         if (lightLevel != 0) tag.setByte("Light", (byte) lightLevel);
         if (lightOpacity != 0) tag.setShort("Opacity", (short) lightOpacity);
@@ -119,6 +137,10 @@ public abstract class TileMovingBase extends TileEntity {
             tag.setInteger("TickTime", scheduledTickTime);
             tag.setInteger("TickPriority", scheduledTickPriority);
         }
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return value < min ? min : Math.min(value, max);
     }
 
     public Vec3 getMovVec() {
