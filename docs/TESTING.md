@@ -52,6 +52,12 @@ and `ByteBuf` without launching a client or a server.
 | `TileCacheKeyTest` | Client tile-cache keys include the dimension as well as coordinates. |
 | `DescriptorRegistryTest` | Missing/unknown description ids fall back to the vanilla descriptor. |
 | `MoveSnapshotTest` | Registry-name/meta round-trip, legacy numeric block ids, `BlockId` fallback, and unknown/missing blocks falling back to air. |
+| `MoveBlacklistTest` | Mod and registry-name blacklist matching. |
+| `MoveCheckRegistryTest` | Registered move checkers can veto a move; the default checker is restored between tests. |
+| `FactoryRegistryTest` | A block subclass inherits its parent block class's move factory. |
+| `ProxyRegistryTest` | Proxies are found directly and through an interface on a superclass; unrelated objects return null. |
+| `ItemBlockTeleporterTest` | Generated teleporter IDs are never zero and stay in the 20-bit range. |
+| `ItemHelperTest` | Null and ordinary items are not wrenches (no eager optional API initialization). |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
@@ -304,6 +310,55 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       dependency instead of a `NoClassDefFoundError` on placement.
 - [ ] Check the log uses the `funkylocomotion` logger and shows formatted
       messages (not just the first argument).
+
+## P2 checks
+
+### Blacklist and move checks
+
+- [ ] Send `FMLInterModComms.sendMessage("funkylocomotion", "blacklist", "mod:gregtech")`
+      from another mod (or use a small test mod) and verify GregTech blocks are rejected.
+- [ ] Try `block:modid:name` and `ore:ingotIron` entries; both forms reject the
+      matching blocks and do not blacklist unrelated blocks.
+- [ ] Register a custom `IMoveChecker`; verify it can veto a move and that other
+      movers still work.
+
+### FMP and recipes
+
+- [ ] Move a ForgeMultipart/FMP microblock or multipart machine; the client
+      reconstructs the parts and renders them during/after the move.
+- [ ] Start a dev client/NEI and check frame/pusher/wrench/teleporter recipes;
+      no ore dictionary debug spam, correct TE fallback, no recipe-sorter warning.
+- [ ] Craft teleporter items repeatedly; the generated ID is non-zero and the
+      tooltip words are stable after a resource reload/language change.
+
+### Rendering and items
+
+- [ ] Open the creative inventory/NEI; frame items expose the 16 metadata
+      variants and empty direction lists do not show `" ()"`.
+- [ ] Hold the eye wrench in a GUI; the pupil follows the mouse and no GL state
+      leaks into the rest of the GUI.
+- [ ] Use the obstruction particles with the eye wrench; other particles are not
+      corrupted, and Angelica does not report batch/draw errors.
+- [ ] Inspect pusher/slider inventory and world models after rotating; matrices
+      and UV rotations are restored.
+- [ ] `F3+T` while a mover is visible; cached mover geometry is rebuilt instead
+      of showing stale textures.
+
+### Blocks, drops and optional mods
+
+- [ ] Break/move blocks with `onBlockAdded` state (redstone, rails, mod
+      machines); state is initialized after the silent write.
+- [ ] Break an obstacle with a frame; drops, neighbour notifications and client
+      updates happen once.
+- [ ] Start without ForgeMultipart, Thaumcraft and CoFH appearance support;
+      startup is clean and the optional integrations are simply absent.
+- [ ] Start with FMP + Thaumcraft + CoFH; all integrations register.
+
+### Registries
+
+- [ ] Register a move factory for a block superclass; subclasses use it.
+- [ ] Register a sticky proxy for an interface implemented by a block's
+      superclass; sticky movement still works.
 
 ## Regression commands before merging the branch
 
