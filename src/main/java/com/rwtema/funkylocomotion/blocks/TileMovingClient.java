@@ -40,6 +40,7 @@ public class TileMovingClient extends TileMovingBase {
     public boolean rawTile = false;
     public boolean init = false;
     public boolean failedToRenderInFirstPass = false;
+    public int renderCacheGeneration = -1;
 
     public TileMovingClient() {
         super(Side.CLIENT);

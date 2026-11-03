@@ -5,6 +5,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
+import net.minecraftforge.common.MinecraftForge;
 
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.compat.AngelicaCompat;
@@ -32,7 +33,9 @@ public class ProxyClient extends Proxy {
         RenderingRegistry.registerBlockHandler(new RenderBlockPusher());
         RenderingRegistry.registerBlockHandler(new RenderBlockSlider());
         MinecraftForgeClient.registerItemRenderer(FunkyLocomotion.wrench, new RenderItemWrench());
-        ClientRegistry.bindTileEntitySpecialRenderer(TileMovingClient.class, new TileEntityRenderMoving());
+        TileEntityRenderMoving moverRenderer = new TileEntityRenderMoving();
+        ClientRegistry.bindTileEntitySpecialRenderer(TileMovingClient.class, moverRenderer);
+        MinecraftForge.EVENT_BUS.register(moverRenderer);
         FMLCommonHandler.instance()
             .bus()
             .register(new ClientTimer());

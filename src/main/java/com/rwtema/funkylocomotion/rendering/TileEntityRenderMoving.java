@@ -15,14 +15,20 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Facing;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
+import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.common.MinecraftForge;
 
 import org.lwjgl.opengl.GL11;
+
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 import com.rwtema.funkylocomotion.blocks.BlockMoving;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 
 public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
+
+    private static int textureGeneration;
 
     private RenderBlocks renderBlocks;
     private World world;
@@ -173,6 +179,15 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
     }
 
     protected boolean renderStatic(TileMovingClient mover, int pass) {
+        if (mover.renderCacheGeneration != textureGeneration) {
+            mover.cachedState[0] = null;
+            mover.cachedState[1] = null;
+            mover.skipPass[0] = false;
+            mover.skipPass[1] = false;
+            mover.failedToRenderInFirstPass = false;
+            mover.renderCacheGeneration = textureGeneration;
+        }
+
         if (mover.skipPass[pass]) return true;
 
         RenderHelper.disableStandardItemLighting();
@@ -250,6 +265,12 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
         }
         RenderHelper.enableStandardItemLighting();
         return true;
+    }
+
+    @SubscribeEvent
+    public void onTextureStitch(TextureStitchEvent.Post event) {
+        // Block icons/UVs changed; drop every mover's cached vertex state.
+        textureGeneration++;
     }
 
     private static TesselatorVertexState leadVertexState() {
