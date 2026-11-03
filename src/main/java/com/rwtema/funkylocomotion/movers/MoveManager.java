@@ -112,19 +112,30 @@ public class MoveManager {
             vars.put("dstTileEntries", dstTileEntries);
             vars.put("srcLightOpacity", srcLightOpacity);
 
-            section = "BreakBlockWithDrop";
-
-            for (BlockPos pos : dstBlocksToBeDestroyed) {
-                BlockHelper.breakBlockWithDrop(dstWorld, pos);
-            }
-
             Set<Chunk> srcChunks = new HashSet<Chunk>();
             HashSet<EntityPlayer> srcWatchingPlayers = new HashSet<EntityPlayer>();
+            HashSet<EntityPlayer> dstWatchingPlayers = new HashSet<EntityPlayer>();
             HashSet inventories = new HashSet();
 
             vars.put("srcChunks", srcChunks);
             vars.put("srcWatchingPlayers", srcWatchingPlayers);
+            vars.put("dstWatchingPlayers", dstWatchingPlayers);
             vars.put("inventories", inventories);
+
+            section = "BreakBlockWithDrop";
+
+            for (BlockPos pos : dstBlocksToBeDestroyed) {
+                Chunk dstChunk = BlockHelper.getChunk(dstWorld, pos);
+                if (dstChunk != null) {
+                    PlayerManager.PlayerInstance watcher = FLNetwork.getChunkWatcher(dstChunk, dstWorld);
+                    if (watcher != null) dstWatchingPlayers.addAll(watcher.playersWatchingChunk);
+                }
+
+                TileEntity dstTile = dstWorld.getTileEntity(pos.x, pos.y, pos.z);
+                if (dstTile instanceof IInventory) inventories.add(dstTile);
+
+                BlockHelper.breakBlockWithDrop(dstWorld, pos);
+            }
 
             section = "Read Data";
 
@@ -240,6 +251,7 @@ public class MoveManager {
 
             // let there be updates;
             section = "closeInventories";
+            srcWatchingPlayers.addAll(dstWatchingPlayers);
             for (EntityPlayer watchingPlayer : srcWatchingPlayers) {
                 vars.put("Iterator", watchingPlayer);
                 if (watchingPlayer.openContainer != watchingPlayer.inventoryContainer
