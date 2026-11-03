@@ -59,6 +59,7 @@ and `ByteBuf` without launching a client or a server.
 | `ItemBlockTeleporterTest` | Generated teleporter IDs are never zero and stay in the 20-bit range. |
 | `ItemHelperTest` | Null and ordinary items are not wrenches (no eager optional API initialization). |
 | `MovePermissionRegistryTest` | Registered `IMovePermissions` can veto a move; no permissions means allowed. |
+| `MoveSourceHelperTest` | Multi-storage energy payment and clamped booster move times. |
 | `WrenchFactoryTest` | Only public abstract interface methods are copied; `<init>`/`<clinit>`, default, static, private, protected, native, synthetic and bridge methods are rejected. |
 | `BlockSliderRenderSideTest` | Slider side visibility for unset/valid/unknown/invalid render sides, and that the render side is isolated per thread. |
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
@@ -378,6 +379,21 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       throttled chunk-save interval and resumes correctly.
 - [ ] Start a mover with no description data; the client receives a DNR packet
       instead of rendering a stale/invisible tile.
+
+## Feature checks
+
+- [ ] Run `/funkylocomotion reload` after changing `maximumBlocksPushed` /
+      `energyPerBlock`; existing pushers/boosters get the new capacity.
+- [ ] Add a `renderBlacklist` entry and `/fl reload`; the matching mover renders
+      the error/empty crate instead of the tile entity.
+- [ ] Place a pusher as a player, register an `IMovePermissions` that denies the
+      player, and verify the pusher refuses; allow it and verify it moves.
+- [ ] Use the eye wrench on teleporter A, then on teleporter B; both share an ID
+      and move a payload.
+- [ ] Register an `IMoveFactory`/`IMoveChecker`/`IDescriptionProxy` through
+      `FunkyLocomotionAPI` from a test mod and verify each hook is used.
+- [ ] Move a structure with a booster; the shared energy helper still charges
+      the source and booster correctly.
 
 ## Regression commands before merging the branch
 

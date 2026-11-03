@@ -5,7 +5,7 @@
 - **Baseline:** `main` @ `6310790` (“Update build tooling and Gradle wrapper”)
 - **Scope:** `src/main/java`, `src/api/java`, `src/main/resources`, Gradle/mod metadata
 - **Focus:** Angelica (Celeritas + GL 3.3 core/GLSM) and Hodgepodge (GTNH), plus FMP, Thaumcraft, CoFH and general GTNH modpack compatibility
-- **Status:** the P0, P1, P2 and P3 batches are implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
+- **Status:** P0–P3 plus the follow-up feature batch are implemented on this branch. This document remains the full audit/backlog; see [`TESTING.md`](TESTING.md) for unit coverage, the dedicated-server harness, and the in-game checklist.
 
 All line numbers refer to the baseline above. They will drift as code is refactored; use the class/method names as the stable reference.
 
@@ -58,7 +58,9 @@ Also high-impact: `TileMovingClient.renderStatic` permanently disables a pass af
 
 Each item has a focused JUnit regression test where the behaviour is reachable without a live world. A real dedicated server harness (`./gradlew runServer -PflHarness=true`) covers the world/chunk/move paths; see [`TESTING.md`](TESTING.md).
 
-Remaining items are feature work rather than correctness cleanup: `TilePusher`/`TileTeleport` shared energy-source refactoring, teleporter pairing UI and cross-session ID uniqueness, config reload for existing tiles, `renderBlackList` configuration, immutable/packed position keys, and broader API/test polish.
+Feature work implemented: shared energy/booster handling (`MoveSourceHelper`), eye-wrench teleporter pairing, per-session ID deduplication, `/funkylocomotion reload` for tile capacities and `renderBlacklist`, immutable `BlockPos`, and the public `FunkyLocomotionAPI` facade.
+
+Remaining optional polish: cross-session teleporter ID persistence, packed/fastutil position maps for very large structures, and a dedicated config GUI.
 
 ---
 
