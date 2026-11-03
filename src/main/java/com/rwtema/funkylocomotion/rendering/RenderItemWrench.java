@@ -19,6 +19,8 @@ import com.rwtema.funkylocomotion.items.ItemWrench;
 
 public class RenderItemWrench implements IItemRenderer {
 
+    private static final ThreadLocal<FloatBuffer> MATRIX_BUFFER = ThreadLocal.withInitial(() -> BufferUtils.createFloatBuffer(16));
+
     @Override
     public boolean handleRenderType(ItemStack item, ItemRenderType type) {
         return item.getItemDamage() == ItemWrench.metaWrenchEye && type == ItemRenderType.INVENTORY;
@@ -35,6 +37,8 @@ public class RenderItemWrench implements IItemRenderer {
         int k = itemstack.getItemDamage();
         int l;
 
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        try {
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glEnable(GL11.GL_ALPHA_TEST);
 
@@ -66,10 +70,11 @@ public class RenderItemWrench implements IItemRenderer {
         } else {
             int mouseX = Mouse.getX() * currentScreen.width / Minecraft.getMinecraft().displayWidth;
             int mouseY = currentScreen.height
-                - Mouse.getEventY() * currentScreen.height / Minecraft.getMinecraft().displayHeight
+                - Mouse.getY() * currentScreen.height / Minecraft.getMinecraft().displayHeight
                 - 1;
 
-            FloatBuffer matrixData = BufferUtils.createFloatBuffer(16);
+            FloatBuffer matrixData = MATRIX_BUFFER.get();
+            matrixData.clear();
             GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrixData);
 
             float x = (matrixData.get(12) + 8);
@@ -91,12 +96,14 @@ public class RenderItemWrench implements IItemRenderer {
             this.renderIcon(0, 0, FunkyLocomotion.wrench.iconWrenchEye_outline);
         }
 
-        GL11.glEnable(GL11.GL_LIGHTING);
-
-        GL11.glEnable(GL11.GL_CULL_FACE);
+        } finally {
+            GL11.glPopAttrib();
+        }
     }
 
     public void renderIcon(double x, double y, IIcon icon) {
+        if (icon == null) return;
+
         OpenGlHelper.glBlendFunc(770, 771, 1, 0);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glEnable(GL11.GL_ALPHA_TEST);
