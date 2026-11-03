@@ -102,9 +102,8 @@ What it verifies:
   these operations.
 
 A pass prints `[FL-HARNESS] PASS` and shuts the server down. A failure prints
-`[FL-HARNESS] FAIL: ...` and exits non-zero. If your Gradle configuration cache
-warns about the harness preparation task, add `--no-configuration-cache`; the
-harness result is unchanged.
+`[FL-HARNESS] FAIL: ...` and exits non-zero. The harness files are prepared only
+when `-PflHarness=true` is present, so normal `runServer` runs are unaffected.
 
 The harness does **not** verify client rendering, Angelica worker-thread
 meshing, Hodgepodge packet batching, shaders, or actual S35 delivery. Those are

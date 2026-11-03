@@ -15,41 +15,38 @@ val harnessSourceSet = sourceSets.create("harness") {
     runtimeClasspath += output + sourceSets["main"].output + sourceSets["main"].runtimeClasspath
 }
 
-val serverHarnessDirectory = layout.projectDirectory.dir("run/server").asFile
+val runHarness = providers.gradleProperty("flHarness").isPresent
 
-val prepareServerHarness = tasks.register("prepareServerHarness") {
-    notCompatibleWithConfigurationCache("Writes the harness server.properties and eula.txt")
-    outputs.upToDateWhen { false }
-    doLast {
-        serverHarnessDirectory.mkdirs()
+if (runHarness) {
+    val dir = layout.projectDirectory.dir("run/server").asFile
+    dir.mkdirs()
 
-        val eula = serverHarnessDirectory.resolve("eula.txt")
-        if (!eula.exists()) eula.writeText("eula=true\n")
+    val eula = dir.resolve("eula.txt")
+    if (!eula.exists()) eula.writeText("eula=true\n")
 
-        val properties = serverHarnessDirectory.resolve("server.properties")
-        if (!properties.exists()) {
-            properties.writeText(
-                """
-                online-mode=false
-                level-name=harness
-                level-type=FLAT
-                generate-structures=false
-                spawn-protection=0
-                max-tick-time=-1
-                view-distance=4
-                difficulty=0
-                gamemode=1
-                allow-nether=false
-                motd=Funky Locomotion harness
-                """.trimIndent() + "\n"
-            )
-        }
+    val properties = dir.resolve("server.properties")
+    if (!properties.exists()) {
+        properties.writeText(
+            """
+            online-mode=false
+            level-name=harness
+            level-type=FLAT
+            generate-structures=false
+            spawn-protection=0
+            max-tick-time=-1
+            view-distance=4
+            difficulty=0
+            gamemode=1
+            allow-nether=false
+            motd=Funky Locomotion harness
+            """.trimIndent() + "\n"
+        )
     }
 }
 
 tasks.named<JavaExec>("runServer") {
-    if (providers.gradleProperty("flHarness").isPresent) {
-        dependsOn(prepareServerHarness, harnessSourceSet.classesTaskName)
+    if (runHarness) {
+        dependsOn(harnessSourceSet.classesTaskName)
         classpath(harnessSourceSet.output)
         systemProperty("fl.harness", "true")
     }
