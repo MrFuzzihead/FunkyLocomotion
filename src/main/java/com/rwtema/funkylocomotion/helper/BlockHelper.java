@@ -60,9 +60,25 @@ public class BlockHelper {
     }
 
     public static void postUpdateBlock(World world, BlockPos pos) {
+        postUpdateBlock(world, pos, -1);
+    }
+
+    /**
+     * Notifies the world after a direct block write.
+     *
+     * @param oldLightOpacity the light opacity of the block that was replaced, or
+     *                        {@code -1} when unknown. Passing 255 here (the old
+     *                        behaviour) makes almost every placement look like an
+     *                        opaque-to-transparent transition and forces a full
+     *                        skylight recomputation for the column.
+     */
+    public static void postUpdateBlock(World world, BlockPos pos, int oldLightOpacity) {
+        if (world == null || !world.blockExists(pos.x, pos.y, pos.z)) return;
+
         int i1 = (pos.z & 15) << 4 | (pos.x & 15);
 
         Chunk chunk = getChunk(world, pos);
+        if (chunk == null) return;
 
         if (pos.y >= chunk.precipitationHeightMap[i1] - 1) {
             chunk.precipitationHeightMap[i1] = -999;
@@ -71,7 +87,6 @@ public class BlockHelper {
         int j1 = chunk.heightMap[i1];
         boolean flag = pos.y >= j1;
         Block newBlock = chunk.getBlock(pos.x & 15, pos.y, pos.z & 15);
-        int k2 = 255;
 
         if (flag) {
             chunk.generateSkylightMap();
@@ -87,8 +102,9 @@ public class BlockHelper {
                 chunk.relightBlock(pos.x & 15, pos.y, pos.z & 15);
             }
 
-            if (j2 != k2 && (j2 < k2 || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0
-                || chunk.getSavedLightValue(EnumSkyBlock.Block, pos.x & 15, pos.y, pos.z & 15) > 0)) {
+            if (oldLightOpacity >= 0 && j2 != oldLightOpacity
+                && (j2 < oldLightOpacity || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0
+                    || chunk.getSavedLightValue(EnumSkyBlock.Block, pos.x & 15, pos.y, pos.z & 15) > 0)) {
                 chunk.propagateSkylightOcclusion(pos.x & 15, pos.z & 15);
             }
         }

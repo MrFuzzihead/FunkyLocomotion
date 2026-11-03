@@ -15,6 +15,7 @@ import cpw.mods.fml.relauncher.Side;
 public class TileMovingServer extends TileMovingBase {
 
     public WeakReference<EntityPlayer> activatingPlayer = null;
+    public boolean finishing = false;
     public int activatingSide = -1;
     public float activatingHitX, activatingHitY, activatingHitZ;
 
@@ -68,7 +69,7 @@ public class TileMovingServer extends TileMovingBase {
 
             super.updateEntity();
             this.worldObj.markTileEntityChunkModified(this.xCoord, this.yCoord, this.zCoord, this);
-        } else MoveManager.finishMoving();
+        } else if (!finishing) MoveManager.finishMoving();
     }
 
     public void cacheActivate(EntityPlayer player, int side, float hitX, float hitY, float hitZ) {
