@@ -118,7 +118,9 @@ public class BlockSlider extends BlockPusher {
                 world.setBlockMetadataWithNotify(x, y, z, toggleFacing(meta, side), 3);
 
                 if (tile != null && tile.getClass() == TileSlider.class) {
-                    ((TileSlider) tile).getSlideDir();
+                    TileSlider slider = (TileSlider) tile;
+                    slider.setSlideDir(ForgeDirection.UNKNOWN);
+                    slider.getSlideDir();
                     world.markBlockForUpdate(x, y, z);
                 }
             }

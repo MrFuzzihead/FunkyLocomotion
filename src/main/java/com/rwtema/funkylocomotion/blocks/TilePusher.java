@@ -31,8 +31,8 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
     public static final int MIN_POWER_PER_TILE = 1;
     public static final int MAX_POWER_PER_TILE = 1000000;
 
-    public static int maxTiles = 256;
-    public static int powerPerTile = 1000;
+    public static int maxTiles = 1024;
+    public static int powerPerTile = 250;
     public final EnergyStorage energy = new EnergyStorage(energyCapacity(maxTiles, powerPerTile));
     public boolean powered;
 

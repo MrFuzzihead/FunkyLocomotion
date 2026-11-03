@@ -572,6 +572,14 @@ public class MoveManager {
     }
 
     private static String makeString(Object o, int n) {
+        try {
+            return makeStringUnsafe(o, n);
+        } catch (Throwable t) {
+            return o == null ? "null" : o.getClass().getName() + "{...}";
+        }
+    }
+
+    private static String makeStringUnsafe(Object o, int n) {
         if (o == null) return "null";
         if (o instanceof String) return (String) o;
 
