@@ -144,7 +144,7 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                 Minecraft.getMinecraft().thePlayer.worldObj = prevWorld2;
             }
             specialRenderer.func_147496_a(world);
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
             FLRenderHelper.clearTessellator();
 
             (new RuntimeException(
@@ -204,15 +204,10 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             mover.cachedState[pass] = null;
             mover.skipPass[pass] = true;
 
+            boolean rendered = false;
             try {
-                if (renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord)) {
-                    if (tessellator.rawBufferIndex > 0) {
-                        mover.cachedState[pass] = leadVertexState();
-                        mover.skipPass[pass] = false;
-                    }
-                }
-
-            } catch (Exception e) {
+                rendered = renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord);
+            } catch (Exception | LinkageError e) {
                 (new RuntimeException(
                     "Unable to render block " + Block.blockRegistry.getNameForObject(mover.block)
                         + " with meta "
@@ -221,6 +216,7 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                         + mover.xCoord
                         + ","
                         + mover.yCoord
+                        + ","
                         + mover.zCoord
                         + "). Disabling Rendering.",
                     e)).printStackTrace();
@@ -232,6 +228,20 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
                 mover.cachedState[pass] = null;
                 mover.skipPass[pass] = true;
+            }
+
+            MoverRenderResult result = MoverRenderResult.classify(rendered, tessellator.rawBufferIndex);
+            if (result == MoverRenderResult.CACHE) {
+                mover.cachedState[pass] = leadVertexState();
+                mover.skipPass[pass] = false;
+            } else if (result == MoverRenderResult.SKIP) {
+                mover.cachedState[pass] = null;
+                mover.skipPass[pass] = true;
+            } else {
+                // The renderer was not ready (for example an ISBRH that returns
+                // false until its data is available). Do not blacklist the pass.
+                mover.cachedState[pass] = null;
+                mover.skipPass[pass] = false;
             }
 
             tessellator.draw();
