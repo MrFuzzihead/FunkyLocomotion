@@ -53,7 +53,8 @@ import cpw.mods.fml.common.registry.GameRegistry;
     modid = FunkyLocomotion.MODID,
     name = FunkyLocomotion.MODNAME,
     version = Tags.VERSION,
-    dependencies = "required-after:CoFHCore;after:ForgeMultipart;after:Thaumcraft;after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)")
+    dependencies = "required-after:CoFHCore;after:ForgeMultipart;after:Thaumcraft;after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)",
+    guiFactory = "com.rwtema.funkylocomotion.client.FunkyLocomotionGuiFactory")
 public class FunkyLocomotion {
 
     public static final String MODID = "funkylocomotion";
@@ -172,6 +173,10 @@ public class FunkyLocomotion {
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
         event.registerServerCommand(new CommandFunkyLocomotion());
+    }
+
+    public static Configuration getConfig() {
+        return config;
     }
 
     public static void reloadConfig() {

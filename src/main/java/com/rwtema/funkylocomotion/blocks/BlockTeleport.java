@@ -2,6 +2,7 @@ package com.rwtema.funkylocomotion.blocks;
 
 import java.util.ArrayList;
 
+import net.minecraft.block.Block;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -89,7 +90,10 @@ public class BlockTeleport extends BlockPusher {
             return true;
         }
 
-        int id = tag.getInteger(ItemWrench.NBT_TELEPORT_ID);
+        int requested = tag.getInteger(ItemWrench.NBT_TELEPORT_ID);
+        TeleportIdData data = TeleportIdData.get(world);
+        int id = requested == teleporter.teleportId ? requested
+            : data == null ? requested : data.reassign(teleporter.teleportId, requested);
         teleporter.setTeleportId(id);
         player.addChatComponentMessage(new ChatComponentTranslation("frame.teleport.pair.apply", id));
         return true;
@@ -97,16 +101,33 @@ public class BlockTeleport extends BlockPusher {
 
     @Override
     public boolean removedByPlayer(World world, EntityPlayer player, int x, int y, int z, boolean willHarvest) {
-        return super.removedByPlayer(world, player, x, y, z, willHarvest);
+        // Capture the id-bearing drop before breakBlock removes the tile entity.
+        ArrayList<ItemStack> drops = world.isRemote ? null
+            : getDrops(world, x, y, z, world.getBlockMetadata(x, y, z), 0);
+
+        if (!super.removedByPlayer(world, player, x, y, z, willHarvest)) return false;
+
+        if (drops != null && !player.capabilities.isCreativeMode) {
+            for (ItemStack item : drops) {
+                dropBlockAsItem(world, x, y, z, item);
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void breakBlock(World world, int x, int y, int z, Block block, int meta) {
+        TileEntity tile = world.getTileEntity(x, y, z);
+        if (tile instanceof TileTeleport) {
+            TeleportIdData data = TeleportIdData.get(world);
+            if (data != null) data.release(((TileTeleport) tile).teleportId);
+        }
+        super.breakBlock(world, x, y, z, block, meta);
     }
 
     @Override
     public void harvestBlock(World world, EntityPlayer player, int x, int y, int z, int meta) {
         if (world.isRemote) return;
-
-        for (ItemStack item : getDrops(world, x, y, z, meta, 0)) {
-            dropBlockAsItem(world, x, y, z, item);
-        }
 
         int stat = getIdFromBlock(this);
         if (stat >= 0 && stat < StatList.mineBlockStatArray.length && StatList.mineBlockStatArray[stat] != null) {
@@ -142,10 +163,18 @@ public class BlockTeleport extends BlockPusher {
 
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile instanceof TileTeleport) {
-            tile.invalidate();
-            ((TileTeleport) tile).teleportId = item.getTagCompound()
+            int requested = item.getTagCompound()
                 .getInteger(ItemBlockTeleporter.NBT_TELEPORTER_ID);
-            tile.validate();
+            TeleportIdData data = TeleportIdData.get(world);
+            int id = data == null ? requested : data.allocate(requested);
+
+            if (id != requested) {
+                NBTTagCompound tag = new NBTTagCompound();
+                tag.setInteger(ItemBlockTeleporter.NBT_TELEPORTER_ID, id);
+                item.setTagCompound(tag);
+            }
+
+            ((TileTeleport) tile).setTeleportId(id);
         }
     }
 }
