@@ -49,6 +49,8 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             return;
         }
 
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        try {
         this.bindTexture(TextureMap.locationBlocksTexture);
         boolean flag = false;
 
@@ -102,6 +104,9 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             GL11.glPopMatrix();
 
             RenderHelper.enableStandardItemLighting();
+        }
+        } finally {
+            GL11.glPopAttrib();
         }
     }
 
