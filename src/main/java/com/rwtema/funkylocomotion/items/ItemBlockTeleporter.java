@@ -2,6 +2,8 @@ package com.rwtema.funkylocomotion.items;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
@@ -30,10 +32,16 @@ public class ItemBlockTeleporter extends ItemBlock {
     }
 
     public static Random rand = new Random();
+    private static final Set<Integer> issuedIds = ConcurrentHashMap.newKeySet();
 
     public static ItemStack assignRandomID(ItemStack item) {
+        int id;
+        do {
+            id = 1 + rand.nextInt(0xFFFFF);
+        } while (!issuedIds.add(id));
+
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger(NBT_TELEPORTER_ID, 1 + rand.nextInt(0xFFFFF));
+        tag.setInteger(NBT_TELEPORTER_ID, id);
         item.setTagCompound(tag);
         return item;
     }
