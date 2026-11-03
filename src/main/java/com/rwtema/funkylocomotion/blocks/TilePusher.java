@@ -14,7 +14,6 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IAdvStickyBlock;
 import com.rwtema.funkylocomotion.api.IStickyBlock;
@@ -22,6 +21,7 @@ import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.movepermissions.MovePermissionRegistry;
 import com.rwtema.funkylocomotion.movers.IMover;
 import com.rwtema.funkylocomotion.movers.MoveManager;
+import com.rwtema.funkylocomotion.movers.MoveSourceHelper;
 import com.rwtema.funkylocomotion.particles.ObstructionHelper;
 import com.rwtema.funkylocomotion.proxydelegates.ProxyRegistry;
 
@@ -207,38 +207,16 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
         BlockPos pos = new BlockPos(xCoord, yCoord, zCoord);
         List<BlockPos> posList = getBlocks(worldObj, pos, dir, push);
-        if (posList != null) {
-            final int energy = energyCost(posList.size());
-            if (this.energy.extractEnergy(energy, true) != energy) return;
+        if (posList == null) return;
 
-            ArrayList<TileBooster> boosters = new ArrayList<TileBooster>(6);
-            for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
-                if (d != dir) {
-                    BlockPos p = pos.advance(d);
-                    if (BlockHelper.getBlock(worldObj, p) == FunkyLocomotion.booster) {
-                        if (ForgeDirection.getOrientation(BlockHelper.getMeta(worldObj, p) % 6) != d) continue;
+        final int energy = energyCost(posList.size());
+        if (!MoveSourceHelper.canPay(energy, this.energy)) return;
 
-                        TileEntity tile = BlockHelper.getTile(worldObj, p);
-                        if (tile instanceof TileBooster) {
-                            TileBooster booster = (TileBooster) tile;
-                            if (booster.energy.extractEnergy(energy, true) != energy) return;
+        List<TileBooster> boosters = MoveSourceHelper.findBoosters(worldObj, pos, dir, energy);
+        if (boosters == null) return;
 
-                            boosters.add(booster);
-                        }
-                    }
-                }
-            }
-
-            if (!boosters.isEmpty()) {
-                for (TileBooster booster : boosters) {
-                    booster.energy.extractEnergy(energy, false);
-                }
-            }
-
-            this.energy.extractEnergy(energy, false);
-
-            MoveManager.startMoving(worldObj, posList, getDirection(), moveTime[boosters.size()]);
-        }
+        MoveSourceHelper.drain(energy, boosters, this.energy);
+        MoveManager.startMoving(worldObj, posList, getDirection(), MoveSourceHelper.moveTime(boosters.size()));
     }
 
     @Override

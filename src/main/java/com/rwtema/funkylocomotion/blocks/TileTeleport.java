@@ -9,16 +9,15 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.helper.WeakSet;
 import com.rwtema.funkylocomotion.movers.MoveManager;
+import com.rwtema.funkylocomotion.movers.MoveSourceHelper;
 import com.rwtema.funkylocomotion.particles.ObstructionHelper;
 
 import cpw.mods.fml.relauncher.Side;
@@ -135,51 +134,27 @@ public class TileTeleport extends TilePusher {
 
         BlockPos pos = new BlockPos(xCoord, yCoord, zCoord);
         List<BlockPos> posList = getBlocks(worldObj, pos, dir, push);
-        if (posList != null) {
-            final int energy = TilePusher.energyCost(posList.size());
-            if (this.energy.extractEnergy(energy, true) != energy) return;
+        if (posList == null) return;
 
-            if (tileTeleport.energy.extractEnergy(energy, true) != energy) return;
+        final int energy = MoveSourceHelper.energyCost(posList);
+        if (!MoveSourceHelper.canPay(energy, this.energy, tileTeleport.energy)) return;
 
-            ArrayList<TileBooster> boosters = new ArrayList<TileBooster>(6);
-            for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
-                if (d != dir) {
-                    BlockPos p = pos.advance(d);
-                    if (BlockHelper.getBlock(worldObj, p) == FunkyLocomotion.booster) {
-                        if (ForgeDirection.getOrientation(BlockHelper.getMeta(worldObj, p) % 6) != d) continue;
+        List<TileBooster> boosters = MoveSourceHelper.findBoosters(worldObj, pos, dir, energy);
+        if (boosters == null) return;
 
-                        TileEntity tile = BlockHelper.getTile(worldObj, p);
-                        if (tile instanceof TileBooster) {
-                            TileBooster booster = (TileBooster) tile;
-                            if (booster.energy.extractEnergy(energy, true) != energy) return;
+        MoveSourceHelper.drain(energy, boosters, this.energy, tileTeleport.energy);
 
-                            boosters.add(booster);
-                        }
-                    }
-                }
-            }
-
-            if (!boosters.isEmpty()) {
-                for (TileBooster booster : boosters) {
-                    booster.energy.extractEnergy(energy, false);
-                }
-            }
-
-            this.energy.extractEnergy(energy, false);
-            tileTeleport.energy.extractEnergy(energy, false);
-
-            ArrayList<MoveManager.BlockLink> links = new ArrayList<MoveManager.BlockLink>(posList.size());
-            for (BlockPos blockPos : posList) {
-                links.add(new MoveManager.BlockLink(blockPos, getDestinationPos(tileTeleport, blockPos)));
-            }
-
-            MoveManager.startMoving(
-                worldObj,
-                tileTeleport.worldObj,
-                links,
-                ForgeDirection.UNKNOWN,
-                moveTime[boosters.size()] * 2);
+        ArrayList<MoveManager.BlockLink> links = new ArrayList<MoveManager.BlockLink>(posList.size());
+        for (BlockPos blockPos : posList) {
+            links.add(new MoveManager.BlockLink(blockPos, getDestinationPos(tileTeleport, blockPos)));
         }
+
+        MoveManager.startMoving(
+            worldObj,
+            tileTeleport.worldObj,
+            links,
+            ForgeDirection.UNKNOWN,
+            MoveSourceHelper.moveTime(boosters.size()) * 2);
     }
 
     @Override
