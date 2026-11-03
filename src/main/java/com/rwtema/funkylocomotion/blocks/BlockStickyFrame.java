@@ -53,7 +53,9 @@ public final class BlockStickyFrame extends BlockFrame {
     @Override
     @SuppressWarnings("unchecked")
     public void getSubBlocks(Item item, CreativeTabs tab, List list) {
-        list.add(new ItemStack(item, 1, 0));
+        for (int meta = 0; meta < 16; meta++) {
+            list.add(new ItemStack(item, 1, meta));
+        }
     }
 
     @Override

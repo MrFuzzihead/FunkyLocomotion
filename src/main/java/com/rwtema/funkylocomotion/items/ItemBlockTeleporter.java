@@ -33,7 +33,7 @@ public class ItemBlockTeleporter extends ItemBlock {
 
     public static ItemStack assignRandomID(ItemStack item) {
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger(NBT_TELEPORTER_ID, Math.abs(rand.nextInt()) & 0xFFFFF);
+        tag.setInteger(NBT_TELEPORTER_ID, 1 + rand.nextInt(0xFFFFF));
         item.setTagCompound(tag);
         return item;
     }
@@ -100,6 +100,7 @@ public class ItemBlockTeleporter extends ItemBlock {
             .append('"');
 
         String[] words = WordDictionary.getWords();
+        if (words.length == 0) return;
 
         while (id != 0) {
             builder.append(words[(int) (id % words.length)]);
