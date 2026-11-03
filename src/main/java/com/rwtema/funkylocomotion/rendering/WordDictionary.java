@@ -27,11 +27,10 @@ public class WordDictionary implements IResourceManagerReloadListener {
         }
     }
 
-    private static final String[] FALLBACK = new String[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-        "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "Block", "Cloud", "Craft",
-        "Dark", "Dust", "Ender", "Engine", "Frame", "Gear", "Gem", "Gold", "Ingot", "Iron", "Light", "Machine",
-        "Move", "Nugget", "Pearl", "Piston", "Plate", "Power", "Red", "Rod", "Signal", "Sky", "Slime", "Stone",
-        "Wire", "World" };
+    private static final String[] FALLBACK = new String[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+        "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "Block", "Cloud", "Craft", "Dark", "Dust",
+        "Ender", "Engine", "Frame", "Gear", "Gem", "Gold", "Ingot", "Iron", "Light", "Machine", "Move", "Nugget",
+        "Pearl", "Piston", "Plate", "Power", "Red", "Rod", "Signal", "Sky", "Slime", "Stone", "Wire", "World" };
 
     private static String[] words;
 

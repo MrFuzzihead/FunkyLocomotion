@@ -6,7 +6,6 @@ import net.minecraft.client.particle.EntityReddustFX;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.world.World;
 
-
 public class ParticleObstruction extends EntityReddustFX {
 
     public static final Random RANDOM = new Random();

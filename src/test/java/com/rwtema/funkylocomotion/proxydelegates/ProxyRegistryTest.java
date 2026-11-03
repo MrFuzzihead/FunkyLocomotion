@@ -9,7 +9,8 @@ import org.junit.Test;
 
 public class ProxyRegistryTest {
 
-    interface Marker {}
+    interface Marker {
+    }
 
     interface Sticky {
 

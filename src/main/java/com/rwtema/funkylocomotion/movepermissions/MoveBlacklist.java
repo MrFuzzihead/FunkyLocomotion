@@ -36,8 +36,9 @@ public final class MoveBlacklist {
         if (entry.isEmpty()) return;
 
         if (entry.startsWith("mod:")) {
-            modIds.add(entry.substring(4)
-                .trim());
+            modIds.add(
+                entry.substring(4)
+                    .trim());
         } else if (entry.startsWith("block:")) {
             blockNames.add(
                 entry.substring(6)
@@ -60,16 +61,14 @@ public final class MoveBlacklist {
     }
 
     static boolean matches(String blockName, String modId) {
-        return blockName != null && blockNames.contains(blockName)
-            || modId != null && modIds.contains(modId);
+        return blockName != null && blockNames.contains(blockName) || modId != null && modIds.contains(modId);
     }
 
     public static boolean isBlacklisted(World world, BlockPos pos, Block block) {
         if (block == null) return false;
 
         String blockName = Block.blockRegistry.getNameForObject(block);
-        String modId = blockName != null && blockName.indexOf(':') > 0
-            ? blockName.substring(0, blockName.indexOf(':'))
+        String modId = blockName != null && blockName.indexOf(':') > 0 ? blockName.substring(0, blockName.indexOf(':'))
             : "";
         if (matches(blockName, modId)) return true;
 

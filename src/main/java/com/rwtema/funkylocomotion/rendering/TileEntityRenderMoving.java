@@ -16,15 +16,14 @@ import net.minecraft.util.Facing;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.common.MinecraftForge;
 
 import org.lwjgl.opengl.GL11;
-
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 import com.rwtema.funkylocomotion.blocks.BlockMoving;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
