@@ -266,7 +266,10 @@ public class MoveManager {
             section = "postUpdateBlock";
             for (BlockPos pos : srcBlocksToBecomeAir) {
                 vars.put("Iterator", pos);
-                BlockHelper.postUpdateBlock(dstWorld, pos);
+                // These positions are in the source world. For a cross-dimension
+                // teleport, posting them to dstWorld updated unrelated blocks at the
+                // same coordinates in the destination dimension.
+                BlockHelper.postUpdateBlock(srcWorld, pos);
             }
             vars.put("Iterator", BLANK);
 
