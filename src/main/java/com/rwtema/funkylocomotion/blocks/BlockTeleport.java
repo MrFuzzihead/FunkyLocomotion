@@ -41,7 +41,8 @@ public class BlockTeleport extends BlockPusher {
 
     @Override
     public ItemStack getPickBlock(MovingObjectPosition target, World world, int x, int y, int z, EntityPlayer player) {
-        return getDrops(world, x, y, z, 0, 0).get(0);
+        ArrayList<ItemStack> drops = getDrops(world, x, y, z, 0, 0);
+        return drops.isEmpty() ? null : drops.get(0);
     }
 
     @Override
@@ -56,29 +57,22 @@ public class BlockTeleport extends BlockPusher {
 
     @Override
     public boolean removedByPlayer(World world, EntityPlayer player, int x, int y, int z, boolean willHarvest) {
-
-        if (!player.capabilities.isCreativeMode && this.canHarvestBlock(player, world.getBlockMetadata(x, y, z))) {
-            ArrayList<ItemStack> items = this.getDrops(world, x, y, z, world.getBlockMetadata(x, y, z), 0);
-
-            if (world.setBlockToAir(x, y, z)) {
-                if (!world.isRemote) {
-                    for (ItemStack item : items) {
-                        this.dropBlockAsItem(world, x, y, z, item);
-                    }
-                }
-
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return super.removedByPlayer(world, player, x, y, z, willHarvest);
-        }
+        return super.removedByPlayer(world, player, x, y, z, willHarvest);
     }
 
     @Override
     public void harvestBlock(World world, EntityPlayer player, int x, int y, int z, int meta) {
-        player.addStat(StatList.mineBlockStatArray[getIdFromBlock(this)], 1);
+        if (world.isRemote) return;
+
+        for (ItemStack item : getDrops(world, x, y, z, meta, 0)) {
+            dropBlockAsItem(world, x, y, z, item);
+        }
+
+        int stat = getIdFromBlock(this);
+        if (stat >= 0 && stat < StatList.mineBlockStatArray.length
+            && StatList.mineBlockStatArray[stat] != null) {
+            player.addStat(StatList.mineBlockStatArray[stat], 1);
+        }
         player.addExhaustion(0.025F);
     }
 
@@ -87,8 +81,9 @@ public class BlockTeleport extends BlockPusher {
         ArrayList<ItemStack> ret = new ArrayList<ItemStack>();
         ItemStack item = new ItemStack(this, 1, damageDropped(metadata));
 
-        if (world.getTileEntity(x, y, z) instanceof TileTeleport) {
-            int teleportId = ((TileTeleport) world.getTileEntity(x, y, z)).teleportId;
+        TileEntity tile = world.getTileEntity(x, y, z);
+        if (tile instanceof TileTeleport) {
+            int teleportId = ((TileTeleport) tile).teleportId;
 
             if (teleportId != 0) {
                 NBTTagCompound tag = new NBTTagCompound();
@@ -103,7 +98,7 @@ public class BlockTeleport extends BlockPusher {
 
     @Override
     public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase entity, ItemStack item) {
-        if (!item.hasTagCompound()) return;
+        if (item == null || !item.hasTagCompound()) return;
 
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile instanceof TileTeleport) {
