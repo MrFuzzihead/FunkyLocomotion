@@ -38,7 +38,7 @@ dependencies {
 	implementation("com.github.GTNewHorizons:ForgeMultipart:1.7.2:dev")
     implementation("com.github.GTNewHorizons:CodeChickenCore:1.4.10:dev")
     devOnlyNonPublishable("curse.maven:cofh-core-69162:2388751")
-    devOnlyNonPublishable("thaumcraft:Thaumcraft:1.7.10-4.2.3.5:dev")
+    compileOnly("thaumcraft:Thaumcraft:1.7.10-4.2.3.5:dev")
 
     testImplementation("junit:junit:4.13.2")
     testCompileOnly("curse.maven:cofh-core-69162:2388751")
