@@ -66,7 +66,7 @@ and `ByteBuf` without launching a client or a server.
 | `MoverRenderResultTest` | A not-ready block render is retried next frame; a render exception disables the pass; a successful empty render is skipped; a successful render with geometry is cached. |
 | `MoveCheckReflectorTest` | Static `_Immovable()` markers prevent movement; classes without the marker remain movable. |
 | `AngelicaCompatTest` | Angelica bounds registration fails silently when Angelica is absent. |
-| `TilePusherLimitsTest` | Config clamping, energy capacity/cost overflow protection, and the inclusive BFS block limit. |
+| `TilePusherLimitsTest` | Config clamping, zero-energy/free-move mode, energy capacity/cost overflow protection, and the inclusive BFS block limit. |
 
 ### What the headless tests cannot prove
 
@@ -107,6 +107,8 @@ What it verifies:
   `WorldServer`;
 - a pusher performs a real 3-block frame move over 20 ticks, including
   `MoveManager` finish/cleanup and block placement;
+- a second pusher performs the same move with `energyPerBlock=0`, an empty
+  zero-capacity energy buffer, and no booster/RF input;
 - a **puller teleporter** with metadata `6` performs a real move through the
   teleporter cache and `MoveManager` (the old `advance(meta ^ 1)` path would
   throw `ArrayIndexOutOfBoundsException`);
@@ -385,6 +387,9 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
 
 - [ ] Run `/funkylocomotion reload` after changing `maximumBlocksPushed` /
       `energyPerBlock`; existing pushers/boosters get the new capacity.
+- [ ] Set `energyPerBlock=0` and reload; a pusher and a teleporter pair move
+      with no RF input and no boosters, and existing pushers/boosters drop to
+      zero capacity. Negative values behave as `0`, not as a huge cost.
 - [ ] Add a `renderBlacklist` entry and `/fl reload`; the matching mover renders
       the error/empty crate instead of the tile entity.
 - [ ] Place a pusher as a player, register an `IMovePermissions` that denies the

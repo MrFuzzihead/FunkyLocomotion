@@ -40,10 +40,12 @@ public class FunkyLocomotionHarness {
     private static final int PUSH_X = 0;
     private static final int TELEPORT_SRC_X = 20;
     private static final int TELEPORT_DST_X = 30;
+    private static final int FREE_PUSH_X = 60;
 
     private WorldServer world;
     private int ticks;
     private boolean pusherStarted;
+    private boolean freePusherStarted;
     private boolean teleporterStarted;
 
     @Mod.EventHandler
@@ -69,7 +71,10 @@ public class FunkyLocomotionHarness {
         ticks++;
         if (ticks == 50) {
             verifyPusherTest();
+            setupFreePusherTest();
             setupTeleporterTest();
+        } else if (ticks == 80) {
+            verifyFreePusherTest();
         } else if (ticks == 120) {
             verifyTeleporterTest();
             checkPusherLimit();
@@ -120,6 +125,47 @@ public class FunkyLocomotionHarness {
         check(world.isAirBlock(1, Y, 0), "source frame at x=1 is still present: " + describeBlock(1, Y, 0));
         for (int x = 2; x <= 4; x++) {
             check(isFrame(x, Y, 0), "expected a moved frame at x=" + x + " but found " + describeBlock(x, Y, 0));
+        }
+    }
+
+    private void setupFreePusherTest() {
+        int previousPower = TilePusher.powerPerTile;
+        try {
+            TilePusher.powerPerTile = 0;
+            clearArea(FREE_PUSH_X - 2, FREE_PUSH_X + 6, -2, 2);
+
+            check(world.setBlock(FREE_PUSH_X, Y, 0, FunkyLocomotion.pusher, 4, 3), "could not place the free pusher");
+            for (int x = 1; x <= 3; x++) {
+                check(
+                    world.setBlock(FREE_PUSH_X + x, Y, 0, FunkyLocomotion.frame[0], 0, 3),
+                    "could not place free frame at x=" + (FREE_PUSH_X + x));
+            }
+
+            TileEntity tile = world.getTileEntity(FREE_PUSH_X, Y, 0);
+            check(tile instanceof TilePusher, "free pusher tile entity is missing");
+            TilePusher pusher = (TilePusher) tile;
+            check(pusher.energy.getMaxEnergyStored() == 0, "free pusher still has RF capacity");
+            check(pusher.energy.getEnergyStored() == 0, "free pusher unexpectedly has stored RF");
+
+            pusher.startMoving();
+            freePusherStarted = true;
+        } finally {
+            TilePusher.powerPerTile = previousPower;
+        }
+    }
+
+    private void verifyFreePusherTest() {
+        check(freePusherStarted, "free pusher move was not started");
+        check(world.getBlock(FREE_PUSH_X, Y, 0) == FunkyLocomotion.pusher, "the free pusher itself moved");
+        check(
+            world.isAirBlock(FREE_PUSH_X + 1, Y, 0),
+            "free source frame at x=" + (FREE_PUSH_X + 1) + " is still present");
+        for (int x = 2; x <= 4; x++) {
+            check(
+                isFrame(FREE_PUSH_X + x, Y, 0),
+                "expected a free-moved frame at x=" + (FREE_PUSH_X + x)
+                    + " but found "
+                    + describeBlock(FREE_PUSH_X + x, Y, 0));
         }
     }
 

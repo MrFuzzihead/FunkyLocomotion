@@ -20,6 +20,21 @@ public class TilePusherLimitsTest {
         assertEquals(
             TilePusher.MIN_POWER_PER_TILE,
             TilePusher.clampConfig(0, TilePusher.MIN_POWER_PER_TILE, TilePusher.MAX_POWER_PER_TILE));
+        assertEquals(
+            TilePusher.MIN_POWER_PER_TILE,
+            TilePusher.clampConfig(-1, TilePusher.MIN_POWER_PER_TILE, TilePusher.MAX_POWER_PER_TILE));
+    }
+
+    @Test
+    public void zeroPowerDisablesEnergyCost() {
+        int previousPower = TilePusher.powerPerTile;
+        try {
+            TilePusher.powerPerTile = 0;
+            assertEquals(0, TilePusher.energyCost(1024));
+            assertEquals(0, TilePusher.energyCapacity(1024, 0));
+        } finally {
+            TilePusher.powerPerTile = previousPower;
+        }
     }
 
     @Test

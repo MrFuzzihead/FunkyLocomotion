@@ -7,6 +7,7 @@ import net.minecraft.item.Item;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 
 import com.rwtema.funkylocomotion.asm.WrenchFactory;
 import com.rwtema.funkylocomotion.blocks.BlockBooster;
@@ -82,16 +83,7 @@ public class FunkyLocomotion {
 
         config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
-        TilePusher.maxTiles = TilePusher.clampConfig(
-            config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
-                .getInt(1024),
-            TilePusher.MIN_MAX_TILES,
-            TilePusher.MAX_MAX_TILES);
-        TilePusher.powerPerTile = TilePusher.clampConfig(
-            config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250)
-                .getInt(250),
-            TilePusher.MIN_POWER_PER_TILE,
-            TilePusher.MAX_POWER_PER_TILE);
+        applyMoveConfig();
         Recipes.shouldAddRecipes = config.get(Configuration.CATEGORY_GENERAL, "addRecipes", true)
             .getBoolean(true);
         Recipes.shouldAddFrameCopyResetRecipes = config
@@ -179,20 +171,23 @@ public class FunkyLocomotion {
         return config;
     }
 
+    private static void applyMoveConfig() {
+        Property maxBlocks = config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024);
+        maxBlocks.comment = "Maximum number of blocks that can be moved in one operation.";
+        TilePusher.maxTiles = TilePusher
+            .clampConfig(maxBlocks.getInt(1024), TilePusher.MIN_MAX_TILES, TilePusher.MAX_MAX_TILES);
+
+        Property energy = config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250);
+        energy.comment = "RF required per moved block. Set to 0 to disable RF entirely; negative values are treated as 0.";
+        TilePusher.powerPerTile = TilePusher
+            .clampConfig(energy.getInt(250), TilePusher.MIN_POWER_PER_TILE, TilePusher.MAX_POWER_PER_TILE);
+    }
+
     public static void reloadConfig() {
         if (config == null) return;
 
         config.load();
-        TilePusher.maxTiles = TilePusher.clampConfig(
-            config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
-                .getInt(1024),
-            TilePusher.MIN_MAX_TILES,
-            TilePusher.MAX_MAX_TILES);
-        TilePusher.powerPerTile = TilePusher.clampConfig(
-            config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250)
-                .getInt(250),
-            TilePusher.MIN_POWER_PER_TILE,
-            TilePusher.MAX_POWER_PER_TILE);
+        applyMoveConfig();
         renderBlacklist = config.getStringList(
             "renderBlacklist",
             "client",

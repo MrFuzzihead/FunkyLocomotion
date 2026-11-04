@@ -22,6 +22,15 @@ public class MoveSourceHelperTest {
     }
 
     @Test
+    public void zeroCostIsPayableWithEmptyStorage() {
+        EnergyStorage empty = new EnergyStorage(0);
+
+        assertTrue(MoveSourceHelper.canPay(0, empty));
+        MoveSourceHelper.drain(0, null, empty);
+        assertEquals(0, empty.getEnergyStored());
+    }
+
+    @Test
     public void drainPaysAllStorages() {
         EnergyStorage first = new EnergyStorage(1000);
         EnergyStorage second = new EnergyStorage(1000);
