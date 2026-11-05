@@ -7,10 +7,12 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.common.MinecraftForge;
 
+import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.compat.AngelicaCompat;
 import com.rwtema.funkylocomotion.eventhandler.ClientTimer;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+import com.rwtema.funkylocomotion.rendering.RenderBlockFrame;
 import com.rwtema.funkylocomotion.rendering.RenderBlockPusher;
 import com.rwtema.funkylocomotion.rendering.RenderBlockSlider;
 import com.rwtema.funkylocomotion.rendering.RenderItemWrench;
@@ -29,7 +31,9 @@ public class ProxyClient extends Proxy {
     public void registerRendering() {
         pusherRendererId = RenderingRegistry.getNextAvailableRenderId();
         sliderRendererId = RenderingRegistry.getNextAvailableRenderId();
+        BlockFrame.renderType = RenderingRegistry.getNextAvailableRenderId();
 
+        RenderingRegistry.registerBlockHandler(new RenderBlockFrame());
         RenderingRegistry.registerBlockHandler(new RenderBlockPusher());
         RenderingRegistry.registerBlockHandler(new RenderBlockSlider());
         MinecraftForgeClient.registerItemRenderer(FunkyLocomotion.wrench, new RenderItemWrench());

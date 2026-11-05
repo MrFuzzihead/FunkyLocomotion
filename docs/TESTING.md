@@ -359,6 +359,10 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       and UV rotations are restored.
 - [ ] `F3+T` while a mover is visible; cached mover geometry is rebuilt instead
       of showing stale textures.
+- [ ] Place a frame with a closed (wrenched) bottom on grass and look down from
+      above; the closed bottom must read as a solid surface through the open top
+      instead of showing the grass. Repeat with a closed side against an opaque
+      block and with a frame next to glass (no z-fighting).
 - [ ] Move a frame/glass cage and look at it from outside, through the open
       frame centers, and from inside; no frame/glass faces disappear, including
       on a repeat move of the same cage.

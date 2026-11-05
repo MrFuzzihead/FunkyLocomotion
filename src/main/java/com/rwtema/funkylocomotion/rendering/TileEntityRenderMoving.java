@@ -253,15 +253,8 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             boolean rendered = false;
             boolean failed = false;
 
-            // While the mover is between its source and destination it is not
-            // touching its static neighbours, so do not cull faces against them:
-            // the block that will eventually cover a face may sit beside the
-            // mover's current (animated) position, and culling by destination
-            // coordinates would leave a gap as the structure slides past. Movers
-            // still report their moved block, so the structure's own internal
-            // faces stay culled. Non-opaque movers also drop coplanar
-            // frame/glass faces (back-face culling is off for them).
-            boolean previousIgnore = fakeWorldClient.ignoreStaticNeighbours;
+            // The mover owns its coordinates: its tile entity may already have
+            // been replaced (finished ghost) or a new mover may be there.
             int previousX = fakeWorldClient.renderX;
             int previousY = fakeWorldClient.renderY;
             int previousZ = fakeWorldClient.renderZ;
@@ -271,7 +264,6 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             fakeWorldClient.renderX = mover.xCoord;
             fakeWorldClient.renderY = mover.yCoord;
             fakeWorldClient.renderZ = mover.zCoord;
-            fakeWorldClient.ignoreStaticNeighbours = mover.offset(false) != 0;
             fakeWorldClient.renderBlock = mover.block;
             fakeWorldClient.renderMeta = mover.meta;
             try {
@@ -299,7 +291,6 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                 mover.cachedState[pass] = null;
                 mover.skipPass[pass] = true;
             } finally {
-                fakeWorldClient.ignoreStaticNeighbours = previousIgnore;
                 fakeWorldClient.renderX = previousX;
                 fakeWorldClient.renderY = previousY;
                 fakeWorldClient.renderZ = previousZ;

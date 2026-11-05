@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.network.NetHandlerPlayClient;
@@ -26,34 +25,23 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.WorldEvent;
 
-import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
-import com.rwtema.funkylocomotion.helper.IMoverRenderWorld;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class FakeWorldClient extends WorldClient implements IMoverRenderWorld {
+public class FakeWorldClient extends WorldClient {
 
     private static final Map<World, FakeWorldClient> cache = new ConcurrentHashMap<World, FakeWorldClient>();
     public double offset = 0;
     public ForgeDirection dir = ForgeDirection.UNKNOWN;
-    /**
-     * When set, non-mover positions are reported as air. Used while building a
-     * mover's static geometry: the mover is translated between its source and
-     * destination, so a face that will eventually touch a static block is still
-     * visible during the animation. Movers always report their moved block, so
-     * culling between blocks of the moving structure stays exact.
-     */
-    public boolean ignoreStaticNeighbours = false;
     public int renderX, renderY, renderZ;
     /**
-     * Block currently being drawn by the mover renderer. When it is a
-     * transparent cube (glass/ice), a neighbouring frame is reported as this
-     * block so the glass's own side check hides the coplanar glass face instead
-     * of z-fighting with the frame face.
+     * Block currently being drawn by the mover renderer. The mover owns its
+     * coordinates: its tile entity may no longer be in the chunk map (finished
+     * mover ghost) or a new move may already have replaced it with BlockMoving.
      */
     public Block renderBlock = null;
     public int renderMeta = 0;
@@ -147,41 +135,13 @@ public class FakeWorldClient extends WorldClient implements IMoverRenderWorld {
         if (isRenderPosition(x, y, z)) return renderBlock;
 
         TileMovingClient tile = getTile(x, y, z);
-        boolean mover = tile != null;
-        Block block;
+        if (tile != null) return tile.block;
 
-        if (mover) {
-            block = tile.block;
-        } else if (isIgnoringOpaqueStatic(x, y, z)) {
-            return Blocks.air;
-        } else {
-            block = world.getBlock(x, y, z);
-        }
-
-        if (mover && block instanceof BlockFrame && isTransparentCube(renderBlock)) {
-            // Two movers are both drawn with back-face culling disabled, so
-            // coplanar frame/glass faces would z-fight from either side. Report
-            // the frame as the glass block so the glass side check hides its
-            // duplicate; the frame's face is drawn double-sided and stays.
-            return renderBlock;
-        }
-
-        return block;
+        return world.getBlock(x, y, z);
     }
 
     private boolean isRenderPosition(int x, int y, int z) {
         return renderBlock != null && x == renderX && y == renderY && z == renderZ;
-    }
-
-    @Override
-    public boolean isIgnoringOpaqueStatic(int x, int y, int z) {
-        return ignoreStaticNeighbours && getTile(x, y, z) == null
-            && world.getBlock(x, y, z)
-                .isOpaqueCube();
-    }
-
-    private static boolean isTransparentCube(Block block) {
-        return block != null && (block.getMaterial() == Material.glass || block.getMaterial() == Material.ice);
     }
 
     @Override
@@ -203,14 +163,6 @@ public class FakeWorldClient extends WorldClient implements IMoverRenderWorld {
     @Override
     @SideOnly(Side.CLIENT)
     public int getLightBrightnessForSkyBlocks(int x, int y, int z, int minBrightness) {
-        // While a mover is in flight, static neighbours are ignored for face
-        // culling. Their light would otherwise be baked into the visible face
-        // (a face next to an opaque block or under a grass block comes out black
-        // or dark), so light the mover from its own position instead.
-        if (ignoreStaticNeighbours && getTile(x, y, z) == null) {
-            return world.getLightBrightnessForSkyBlocks(renderX, renderY, renderZ, minBrightness);
-        }
-
         return world.getLightBrightnessForSkyBlocks(x, y, z, minBrightness);
     }
 
@@ -229,14 +181,7 @@ public class FakeWorldClient extends WorldClient implements IMoverRenderWorld {
         if (isRenderPosition(x, y, z)) return renderMeta;
 
         TileMovingClient tile = getTile(x, y, z);
-        if (tile == null) return world.getBlockMetadata(x, y, z);
-
-        // Keep the substituted frame neighbour's metadata in sync with its
-        // substituted block, or vanilla glass's same-block metadata check would
-        // decide the faces differ and render the coplanar glass face anyway.
-        if (tile.block instanceof BlockFrame && isTransparentCube(renderBlock)) return renderMeta;
-
-        return tile.meta;
+        return tile == null ? world.getBlockMetadata(x, y, z) : tile.meta;
     }
 
     @Override
