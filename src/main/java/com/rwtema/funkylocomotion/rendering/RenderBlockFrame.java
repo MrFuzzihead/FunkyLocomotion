@@ -9,6 +9,7 @@ import net.minecraft.world.IBlockAccess;
 
 import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.blocks.BlockStickyFrame;
+import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 
 import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
 
@@ -114,10 +115,16 @@ public class RenderBlockFrame implements ISimpleBlockRenderingHandler {
             int ny = y + Facing.offsetsYForSide[side];
             int nz = z + Facing.offsetsZForSide[side];
             Block neighbor = world.getBlock(nx, ny, nz);
-            if (neighbor instanceof BlockFrame) continue;
+            // While a mover is in flight, a static block along the move axis is
+            // no longer adjacent to it: keep the face that will be culled once
+            // it arrives. Perpendicular neighbours stay culled as at rest.
+            boolean separated = world instanceof FakeWorldClient
+                && ((FakeWorldClient) world).ignoresStaticAlongMoveAxis(nx, ny, nz);
+
+            if (neighbor instanceof BlockFrame && !separated) continue;
 
             boolean closed = isClosed(block, side, meta);
-            if (!closed && neighbor.isOpaqueCube()) continue;
+            if (!closed && neighbor.isOpaqueCube() && !separated) continue;
 
             IIcon icon = block.getIcon(side, meta);
             double x0 = x, y0 = y, z0 = z;

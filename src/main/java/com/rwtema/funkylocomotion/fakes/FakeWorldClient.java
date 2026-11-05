@@ -25,6 +25,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.WorldEvent;
 
+import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -45,6 +46,8 @@ public class FakeWorldClient extends WorldClient {
      */
     public Block renderBlock = null;
     public int renderMeta = 0;
+    public ForgeDirection movingDir = ForgeDirection.UNKNOWN;
+    public boolean inFlight = false;
     final World world;
     final WorldClient worldClient;
 
@@ -142,6 +145,24 @@ public class FakeWorldClient extends WorldClient {
 
     private boolean isRenderPosition(int x, int y, int z) {
         return renderBlock != null && x == renderX && y == renderY && z == renderZ;
+    }
+
+    /**
+     * A static block that the mover has separated from along the move axis. Its
+     * face would be culled at the destination, but during the animation the
+     * mover is not touching it, so the face should be drawn.
+     */
+    public boolean ignoresStaticAlongMoveAxis(int x, int y, int z) {
+        if (!inFlight || movingDir == null || movingDir == ForgeDirection.UNKNOWN) return false;
+        if (getTile(x, y, z) != null) return false;
+
+        ForgeDirection dir = movingDir;
+        boolean along = (dir.offsetX != 0 && x != renderX) || (dir.offsetY != 0 && y != renderY)
+            || (dir.offsetZ != 0 && z != renderZ);
+        if (!along) return false;
+
+        Block block = world.getBlock(x, y, z);
+        return block.isOpaqueCube() || block instanceof BlockFrame;
     }
 
     @Override

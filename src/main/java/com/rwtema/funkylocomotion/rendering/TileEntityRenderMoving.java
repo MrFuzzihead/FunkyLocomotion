@@ -16,6 +16,7 @@ import net.minecraft.util.Facing;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
@@ -260,12 +261,17 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             int previousZ = fakeWorldClient.renderZ;
             Block previousRenderBlock = fakeWorldClient.renderBlock;
             int previousRenderMeta = fakeWorldClient.renderMeta;
+            ForgeDirection previousDir = fakeWorldClient.movingDir;
+            boolean previousInFlight = fakeWorldClient.inFlight;
 
             fakeWorldClient.renderX = mover.xCoord;
             fakeWorldClient.renderY = mover.yCoord;
             fakeWorldClient.renderZ = mover.zCoord;
             fakeWorldClient.renderBlock = mover.block;
             fakeWorldClient.renderMeta = mover.meta;
+            fakeWorldClient.movingDir = mover.dir >= 0 && mover.dir < 6 ? ForgeDirection.getOrientation(mover.dir)
+                : ForgeDirection.UNKNOWN;
+            fakeWorldClient.inFlight = mover.offset(false) != 0;
             try {
                 rendered = renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord);
             } catch (Exception | LinkageError e) {
@@ -296,6 +302,8 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                 fakeWorldClient.renderZ = previousZ;
                 fakeWorldClient.renderBlock = previousRenderBlock;
                 fakeWorldClient.renderMeta = previousRenderMeta;
+                fakeWorldClient.movingDir = previousDir;
+                fakeWorldClient.inFlight = previousInFlight;
             }
 
             MoverRenderResult result = MoverRenderResult.classify(failed, rendered, tessellator.rawBufferIndex);
