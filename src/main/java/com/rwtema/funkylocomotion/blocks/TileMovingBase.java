@@ -172,17 +172,23 @@ public abstract class TileMovingBase extends TileEntity {
             if (!a.isDead) {
                 java.util.Set<Entity> moved = EntityMovingEventHandler.getMovementSet(side);
                 if (!moved.contains(a)) {
+                    boolean onPlatform = false;
                     for (AxisAlignedBB bb : getTransformedCollisions()) {
-                        if (a.boundingBox.intersectsWith(bb)) {
-                            if (a.boundingBox.minY > bb.maxY - 0.2) {
-                                a.boundingBox.offset(0, bb.maxY - a.boundingBox.minY, 0);
-                            }
-                        } else if (dir == 0 && a.motionY <= 0 && a.boundingBox.intersectsWith(bb.offset(0, 0.2, 0))) {
-                            a.boundingBox.offset(0, bb.maxY - a.boundingBox.minY, 0);
+                        // bb is the platform's position after this tick's motion.
+                        // Align the rider with its previous top so the shared move
+                        // below applies the motion exactly once (snapping to bb.maxY
+                        // and then moving again made riders sink and bounce).
+                        double adjustment = riderTopAdjustment(a.boundingBox, bb, mov.yCoord, a.motionY);
+                        if (!Double.isNaN(adjustment)) {
+                            a.boundingBox.offset(0, adjustment, 0);
+                            onPlatform = true;
                         }
                     }
 
-                    EntityMovingEventHandler.moveEntity(a, mov.xCoord, mov.yCoord, mov.zCoord);
+                    // Keep a rider supported: without this the downward carry
+                    // leaves onGround false, gravity builds up and the player
+                    // falls/catches on the platform once per tick.
+                    EntityMovingEventHandler.moveEntity(a, mov.xCoord, mov.yCoord, mov.zCoord, onPlatform);
 
                     moved.add(a);
                 }
@@ -190,6 +196,28 @@ public abstract class TileMovingBase extends TileEntity {
             }
         }
 
+    }
+
+    /**
+     * Y offset that puts a rider on the platform's top <em>before</em> this
+     * tick's motion, or NaN when the entity is not riding the platform. The
+     * caller then moves the entity by the platform's delta, so the motion is
+     * applied exactly once.
+     */
+    static double riderTopAdjustment(AxisAlignedBB entityBox, AxisAlignedBB platformBox, double moveY, double motionY) {
+        double previousTop = platformBox.maxY - moveY;
+        // A fast move can leave a rider up to |moveY| above (downward move) or
+        // inside (upward move) the platform's new top. Reach that far, plus the
+        // usual 0.2 tolerance, in both cases.
+        double reach = Math.abs(moveY) + 0.2;
+        if (entityBox.intersectsWith(platformBox)) {
+            if (entityBox.minY > platformBox.maxY - reach) return previousTop - entityBox.minY;
+        } else if (motionY <= 0 && entityBox.minY >= platformBox.maxY - 0.2
+            && entityBox.minY <= platformBox.maxY + reach
+            && entityBox.intersectsWith(platformBox.getOffsetBoundingBox(0, reach, 0))) {
+                return previousTop - entityBox.minY;
+            }
+        return Double.NaN;
     }
 
     public AxisAlignedBB getCombinedCollisions() {

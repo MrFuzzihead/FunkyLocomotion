@@ -35,7 +35,27 @@ public class EntityMovingEventHandler {
      * consistently. The old copy omitted several of those side effects.
      */
     public static void moveEntity(Entity entity, double dx, double dy, double dz) {
+        moveEntity(entity, dx, dy, dz, false);
+    }
+
+    /**
+     * Move an entity that is standing on a moving block. Vanilla only reports
+     * onGround when downward motion is blocked, which is never true for an
+     * entity carried down flush with the platform. Keeping the entity grounded
+     * and its vertical motion cancelled stops gravity from accumulating between
+     * carries (the downward-ride bounce).
+     */
+    public static void moveEntity(Entity entity, double dx, double dy, double dz, boolean onMovingPlatform) {
+        // Let vanilla's sneaking edge protection see the support during this move.
+        if (onMovingPlatform) entity.onGround = true;
+
         entity.moveEntity(dx, dy, dz);
+
+        if (onMovingPlatform) {
+            entity.onGround = true;
+            entity.motionY = 0;
+            entity.fallDistance = 0;
+        }
     }
 
     @SubscribeEvent

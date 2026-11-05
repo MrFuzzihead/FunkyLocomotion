@@ -43,6 +43,7 @@ and `ByteBuf` without launching a client or a server.
 | `TileTeleportTest` | `TileTeleport.getTeleportFacing(int)` for all metadata `0..11`; destination offsets for every source/destination metadata pair, including puller metadata. This is the regression test for the `ArrayIndexOutOfBoundsException`. |
 | `TileMovingBaseNbtTest` | NBT round-trip of `block`/`desc`, time/maxTime/dir, collision boxes, scheduled tick time/priority, light values; missing keys; clamping; the old `"TimeTime"` typo is not treated as `"TickTime"`. |
 | `TileMovingProgressTest` | Zero-duration movers do not produce NaN/Infinity in progress/offset/movement vectors. |
+| `TileMovingRiderTest` | Rider alignment uses the platform's previous top (motion applied once), fast downward moves still catch the rider, and entities below/beside/jumping are not grabbed. |
 | `TileMovingServerDescriptionTest` | `getDescriptionPacket()` clones the live `desc` tag, does not mutate it, and two packets keep independent snapshots; a null description still returns no packet. |
 | `MessageClearTileTest` | Packet coordinate round-trip, including negative and large values. |
 | `MessageClearTileHandlerTest` | The client handler removes the source tile through `World.removeTileEntity` and drops it from `loadedTileEntityList`. |
@@ -316,6 +317,8 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       fall/step logic still match vanilla.
 - [ ] Move a platform up/down; no fall damage/fall state is triggered by the
       platform motion itself.
+- [ ] Ride a platform down; the view does not bob as gravity re-catches the
+      player each tick. A fast downward move still carries the rider.
 
 ### Teleporters and pushers
 
