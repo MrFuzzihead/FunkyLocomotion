@@ -8,7 +8,9 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Facing;
 import net.minecraft.util.IIcon;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -42,6 +44,15 @@ public final class BlockStickyFrame extends BlockFrame {
     @Override
     public IIcon getIcon(int side, int meta) {
         return ((index + meta) & (1 << side)) != 0 ? filled : blockIcon;
+    }
+
+    @Override
+    protected boolean isFaceSolid(IBlockAccess world, int x, int y, int z, int side) {
+        int meta = world.getBlockMetadata(
+            x - Facing.offsetsXForSide[side],
+            y - Facing.offsetsYForSide[side],
+            z - Facing.offsetsZForSide[side]);
+        return ((index + meta) & (1 << side)) != 0;
     }
 
     @Override

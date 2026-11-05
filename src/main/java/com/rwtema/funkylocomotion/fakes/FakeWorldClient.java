@@ -28,13 +28,14 @@ import net.minecraftforge.event.world.WorldEvent;
 
 import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
+import com.rwtema.funkylocomotion.helper.IMoverRenderWorld;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class FakeWorldClient extends WorldClient {
+public class FakeWorldClient extends WorldClient implements IMoverRenderWorld {
 
     private static final Map<World, FakeWorldClient> cache = new ConcurrentHashMap<World, FakeWorldClient>();
     public double offset = 0;
@@ -151,7 +152,7 @@ public class FakeWorldClient extends WorldClient {
 
         if (mover) {
             block = tile.block;
-        } else if (ignoreStaticNeighbours) {
+        } else if (isIgnoringOpaqueStatic(x, y, z)) {
             return Blocks.air;
         } else {
             block = world.getBlock(x, y, z);
@@ -170,6 +171,13 @@ public class FakeWorldClient extends WorldClient {
 
     private boolean isRenderPosition(int x, int y, int z) {
         return renderBlock != null && x == renderX && y == renderY && z == renderZ;
+    }
+
+    @Override
+    public boolean isIgnoringOpaqueStatic(int x, int y, int z) {
+        return ignoreStaticNeighbours && getTile(x, y, z) == null
+            && world.getBlock(x, y, z)
+                .isOpaqueCube();
     }
 
     private static boolean isTransparentCube(Block block) {
