@@ -56,10 +56,34 @@ public class BlockHelper {
             chunk.isModified = true;
             if (block != Blocks.air && chunk.worldObj != null) {
                 block.onBlockAdded(chunk.worldObj, pos.x, pos.y, pos.z);
+
+                // onBlockAdded is allowed to choose a default facing (furnace,
+                // chest, dispenser, ...). The original metadata is the source
+                // of truth for a moved block, so put it back after the hook.
+                if (chunk.getBlock(dx, y, dz) == block && chunk.getBlockMetadata(dx, y, dz) != meta) {
+                    extendedblockstorage.setExtBlockMetadata(dx, y & 15, dz, meta);
+                }
             }
             return true;
         }
 
+    }
+
+    public static boolean silentSetMeta(Chunk chunk, BlockPos pos, int meta) {
+        if (chunk == null || pos == null || pos.y < 0 || pos.y > 255) return false;
+
+        ExtendedBlockStorage storage = chunk.getBlockStorageArray()[pos.y >> 4];
+        if (storage == null) return false;
+
+        int dx = pos.x & 15;
+        int dz = pos.z & 15;
+        int y = pos.y & 15;
+
+        if (storage.getExtBlockMetadata(dx, y, dz) == meta) return false;
+
+        storage.setExtBlockMetadata(dx, y, dz, meta);
+        chunk.isModified = true;
+        return true;
     }
 
     public static void silentClear(Chunk chunk, BlockPos pos) {

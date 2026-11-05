@@ -107,6 +107,8 @@ What it verifies:
   `WorldServer`;
 - a pusher performs a real 3-block frame move over 20 ticks, including
   `MoveManager` finish/cleanup and block placement;
+- a furnace with north-facing metadata survives a destroy/recreate cycle
+  without `onBlockAdded` resetting it to the default south facing;
 - a second pusher performs the same move with `energyPerBlock=0`, an empty
   zero-capacity energy buffer, and no booster/RF input;
 - a **puller teleporter** with metadata `6` performs a real move through the
@@ -262,6 +264,11 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
 
 ### Move finalisation
 
+- [ ] Move a furnace, chest, dispenser, or other facing tile entity; its
+      orientation must match the original, not snap to south.
+- [ ] Move the same structure twice in a row (or push it back and forth) with a
+      chest next to a furnace; the chest never renders with the furnace's (or any
+      other adjacent block's) texture during either move.
 - [ ] Move a frame/chest and verify there is no stone block left behind, even if
       the destination block recreation fails partway through.
 - [ ] Save/restart while a move is finishing; the mover is either completed once
@@ -348,6 +355,9 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       and UV rotations are restored.
 - [ ] `F3+T` while a mover is visible; cached mover geometry is rebuilt instead
       of showing stale textures.
+- [ ] Move a frame/glass cage and look at it from outside, through the open
+      frame centers, and from inside; no frame/glass faces disappear, including
+      on a repeat move of the same cage.
 
 ### Blocks, drops and optional mods
 

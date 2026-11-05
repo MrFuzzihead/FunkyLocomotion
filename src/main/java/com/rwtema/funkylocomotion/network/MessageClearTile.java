@@ -12,6 +12,7 @@ import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.blocks.TileCacheKey;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+import com.rwtema.funkylocomotion.rendering.MoverRenderState;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -77,6 +78,9 @@ public class MessageClearTile implements IMessage {
         // ghost tile before World.updateEntities gets a chance to purge it.
         clientWorld.loadedTileEntityList.remove(tile);
         clientWorld.removeTileEntity(x, y, z);
+
+        // A nearby mover may have culled a face against this block.
+        MoverRenderState.markDirty();
     }
 
     public static class Handler implements IMessageHandler<MessageClearTile, IMessage> {

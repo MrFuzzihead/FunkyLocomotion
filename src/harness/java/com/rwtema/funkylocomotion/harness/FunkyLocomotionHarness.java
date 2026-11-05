@@ -13,6 +13,7 @@ import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.blocks.TileMovingServer;
 import com.rwtema.funkylocomotion.blocks.TilePusher;
 import com.rwtema.funkylocomotion.blocks.TileTeleport;
+import com.rwtema.funkylocomotion.factory.DefaultMoveFactory;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
@@ -61,6 +62,7 @@ public class FunkyLocomotionHarness {
             .register(this);
 
         checkMovingTileSide();
+        checkTileMetadataPreserved();
         setupPusherTest();
     }
 
@@ -96,6 +98,27 @@ public class FunkyLocomotionHarness {
                 + " instead of TileMovingServer");
 
         world.setBlock(0, Y, 2, Blocks.air, 0, 2);
+    }
+
+    private void checkTileMetadataPreserved() {
+        clearArea(78, 84, -2, 2);
+
+        BlockPos src = new BlockPos(80, Y, 0);
+        BlockPos dst = new BlockPos(82, Y, 0);
+
+        check(world.setBlock(src.x, src.y, src.z, Blocks.furnace, 2, 0), "could not place the metadata source");
+        // World.setBlock runs furnace.onBlockAdded, which chooses a default
+        // facing. Force the original north-facing metadata before snapshotting.
+        world.setBlockMetadataWithNotify(src.x, src.y, src.z, 2, 3);
+
+        DefaultMoveFactory factory = new DefaultMoveFactory();
+        NBTTagCompound tag = factory.destroyBlock(world, src);
+        check(tag.hasKey("Meta", 1), "block snapshot did not contain metadata");
+        check(factory.recreateBlock(world, dst, tag), "could not recreate the metadata test block");
+        check(world.getBlock(dst.x, dst.y, dst.z) == Blocks.furnace, "metadata test block changed type");
+        check(
+            world.getBlockMetadata(dst.x, dst.y, dst.z) == 2,
+            "furnace metadata changed to " + world.getBlockMetadata(dst.x, dst.y, dst.z) + " instead of 2");
     }
 
     private void setupPusherTest() {

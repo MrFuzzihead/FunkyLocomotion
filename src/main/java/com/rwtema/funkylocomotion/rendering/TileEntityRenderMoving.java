@@ -27,8 +27,6 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
-    private static int textureGeneration;
-
     private RenderBlocks renderBlocks;
     private World world;
     private FakeWorldClient fakeWorldClient;
@@ -130,7 +128,7 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
     protected boolean renderDynamic(double x, double y, double z, float f, TileMovingClient mover, double h, int dir,
         int pass) {
-        if (mover.tile == null || !mover.tile.shouldRenderInPass(pass)) return false;
+        if (!mover.render || mover.tile == null || !mover.tile.shouldRenderInPass(pass)) return false;
 
         if (fakeWorldClient == null && !createCache()) return false;
 
@@ -182,15 +180,26 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
         return true;
     }
 
+    /**
+     * Drops cached geometry when anything it depends on changed. Block data,
+     * neighbouring movers and icon UVs all contribute to the cached vertex
+     * state, so a cache built for one arrangement must never be reused for
+     * another.
+     */
+    static void refreshCachedGeometry(TileMovingClient mover) {
+        int revision = MoverRenderState.revision();
+        if (mover.renderCacheGeneration == revision) return;
+
+        mover.cachedState[0] = null;
+        mover.cachedState[1] = null;
+        mover.skipPass[0] = false;
+        mover.skipPass[1] = false;
+        mover.failedToRenderInFirstPass = false;
+        mover.renderCacheGeneration = revision;
+    }
+
     protected boolean renderStatic(TileMovingClient mover, int pass) {
-        if (mover.renderCacheGeneration != textureGeneration) {
-            mover.cachedState[0] = null;
-            mover.cachedState[1] = null;
-            mover.skipPass[0] = false;
-            mover.skipPass[1] = false;
-            mover.failedToRenderInFirstPass = false;
-            mover.renderCacheGeneration = textureGeneration;
-        }
+        refreshCachedGeometry(mover);
 
         if (mover.skipPass[pass]) return true;
 
@@ -201,7 +210,14 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }
 
-        GL11.glEnable(GL11.GL_CULL_FACE);
+        // Frame and glass are non-opaque. Culling their back faces makes the
+        // structure look hollow when the camera crosses into or looks through
+        // it. Opaque blocks keep normal back-face culling.
+        if (mover.block.isOpaqueCube()) {
+            GL11.glEnable(GL11.GL_CULL_FACE);
+        } else {
+            GL11.glDisable(GL11.GL_CULL_FACE);
+        }
 
         if (Minecraft.isAmbientOcclusionEnabled()) {
             GL11.glShadeModel(GL11.GL_SMOOTH);
@@ -274,7 +290,7 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
     @SubscribeEvent
     public void onTextureStitch(TextureStitchEvent.Post event) {
         // Block icons/UVs changed; drop every mover's cached vertex state.
-        textureGeneration++;
+        MoverRenderState.markDirty();
     }
 
     private static TesselatorVertexState leadVertexState() {

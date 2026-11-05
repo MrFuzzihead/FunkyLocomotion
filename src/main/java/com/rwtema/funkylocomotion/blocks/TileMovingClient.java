@@ -23,6 +23,7 @@ import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 import com.rwtema.funkylocomotion.movers.MoveSnapshot;
 import com.rwtema.funkylocomotion.rendering.ChunkRerenderer;
+import com.rwtema.funkylocomotion.rendering.MoverRenderState;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -57,6 +58,14 @@ public class TileMovingClient extends TileMovingBase {
     public void invalidate() {
         super.invalidate();
         if (rawTile && tile != null) tile.invalidate();
+        // A removed mover changes which faces its neighbours should render.
+        MoverRenderState.markDirty();
+    }
+
+    @Override
+    public void validate() {
+        super.validate();
+        MoverRenderState.markDirty();
     }
 
     @Override
@@ -93,6 +102,11 @@ public class TileMovingClient extends TileMovingBase {
         }
 
         dir = tag.getByte("Dir");
+
+        // A mover tile entity can be reused by a later move. Never keep the
+        // previous move's raw tile if this packet does not supply a replacement.
+        this.tile = null;
+        rawTile = false;
 
         TileEntity tile = null;
 
@@ -142,6 +156,13 @@ public class TileMovingClient extends TileMovingBase {
         if (render && !init) ChunkRerenderer.markBlock(xCoord, yCoord, zCoord);
 
         init = true;
+
+        // The block, metadata, direction and the reused raw tile can all change
+        // between moves at the same position. Drop cached geometry so a mover is
+        // never drawn with the previous move's model (for example a chest drawn
+        // with a furnace's cached geometry) or with faces culled for its old
+        // neighbours.
+        MoverRenderState.markDirty();
     }
 
     public boolean checkClass(Object o) {

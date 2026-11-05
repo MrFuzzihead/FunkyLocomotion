@@ -497,6 +497,26 @@ public class MoveManager {
             vars.put("block", BLANK);
             vars.put("factory", BLANK);
 
+            // onBlockAdded can adjust a block and its neighbours (chest pairs
+            // are the obvious case). Re-apply the snapshotted metadata after
+            // every block has been recreated so the moved orientation wins.
+            section = "Restore Metadata";
+            for (TileMovingServer tile : tiles) {
+                if (failed.contains(tile)) continue;
+                vars.put("tile", tile);
+                try {
+                    if (tile.block == null || !tile.block.hasKey("Meta")) continue;
+
+                    World world = tile.getWorldObj();
+                    BlockPos pos = new BlockPos(tile);
+                    Chunk chunk = BlockHelper.getChunk(world, pos);
+                    BlockHelper.silentSetMeta(chunk, pos, MoveSnapshot.readMeta(tile.block));
+                } catch (Throwable t) {
+                    markFailed(tile, t, failed);
+                }
+            }
+            vars.put("tile", BLANK);
+
             // Update Blocks
             section = "Update Blocks";
             for (TileMovingServer tile : tiles) {
