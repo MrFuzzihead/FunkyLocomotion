@@ -40,17 +40,13 @@ public class FakeWorldClient extends WorldClient {
     public double offset = 0;
     public ForgeDirection dir = ForgeDirection.UNKNOWN;
     /**
-     * When set, non-mover positions along the move axis are reported as air.
-     * Used while building a mover's static geometry: the mover is translated
-     * between its source and destination, so a face that will eventually touch
-     * a static block is still visible during the animation. Faces perpendicular
-     * to the move axis keep their static neighbour, because their adjacency does
-     * not change. Movers always report their moved block, so culling between
-     * blocks of the moving structure stays exact.
+     * When set, non-mover positions are reported as air. Used while building a
+     * mover's static geometry: the mover is translated between its source and
+     * destination, so a face that will eventually touch a static block is still
+     * visible during the animation. Movers always report their moved block, so
+     * culling between blocks of the moving structure stays exact.
      */
     public boolean ignoreStaticNeighbours = false;
-    public int renderX, renderY, renderZ;
-    public ForgeDirection movingDir = ForgeDirection.UNKNOWN;
     /**
      * Block currently being drawn by the mover renderer. When it is a
      * transparent cube (glass/ice), a neighbouring frame is reported as this
@@ -148,7 +144,7 @@ public class FakeWorldClient extends WorldClient {
 
         if (mover) {
             block = tile.block;
-        } else if (ignoreStaticNeighbours && differsAlongMoveAxis(x, y, z)) {
+        } else if (ignoreStaticNeighbours) {
             return Blocks.air;
         } else {
             block = world.getBlock(x, y, z);
@@ -167,13 +163,6 @@ public class FakeWorldClient extends WorldClient {
 
     private static boolean isTransparentCube(Block block) {
         return block != null && (block.getMaterial() == Material.glass || block.getMaterial() == Material.ice);
-    }
-
-    private boolean differsAlongMoveAxis(int x, int y, int z) {
-        ForgeDirection dir = movingDir;
-        if (dir == null) return false;
-        return (dir.offsetX != 0 && x != renderX) || (dir.offsetY != 0 && y != renderY)
-            || (dir.offsetZ != 0 && z != renderZ);
     }
 
     @Override

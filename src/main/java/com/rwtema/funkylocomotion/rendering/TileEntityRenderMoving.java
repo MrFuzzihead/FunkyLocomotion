@@ -16,7 +16,6 @@ import net.minecraft.util.Facing;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
@@ -255,25 +254,17 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             boolean failed = false;
 
             // While the mover is between its source and destination it is not
-            // touching static neighbours along the move axis, so do not cull
-            // those faces. Faces perpendicular to the move keep their static
-            // neighbour, because their adjacency does not change.
-            // Movers still report their moved block, so the structure's own
-            // internal faces stay culled. Non-opaque movers also drop coplanar
+            // touching its static neighbours, so do not cull faces against them:
+            // the block that will eventually cover a face may sit beside the
+            // mover's current (animated) position, and culling by destination
+            // coordinates would leave a gap as the structure slides past. Movers
+            // still report their moved block, so the structure's own internal
+            // faces stay culled. Non-opaque movers also drop coplanar
             // frame/glass faces (back-face culling is off for them).
             boolean previousIgnore = fakeWorldClient.ignoreStaticNeighbours;
-            int previousX = fakeWorldClient.renderX;
-            int previousY = fakeWorldClient.renderY;
-            int previousZ = fakeWorldClient.renderZ;
-            ForgeDirection previousDir = fakeWorldClient.movingDir;
             Block previousRenderBlock = fakeWorldClient.renderBlock;
             int previousRenderMeta = fakeWorldClient.renderMeta;
 
-            fakeWorldClient.renderX = mover.xCoord;
-            fakeWorldClient.renderY = mover.yCoord;
-            fakeWorldClient.renderZ = mover.zCoord;
-            fakeWorldClient.movingDir = mover.dir >= 0 && mover.dir < 6 ? ForgeDirection.getOrientation(mover.dir)
-                : ForgeDirection.UNKNOWN;
             fakeWorldClient.ignoreStaticNeighbours = mover.offset(false) != 0;
             fakeWorldClient.renderBlock = mover.block;
             fakeWorldClient.renderMeta = mover.meta;
@@ -303,10 +294,6 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                 mover.skipPass[pass] = true;
             } finally {
                 fakeWorldClient.ignoreStaticNeighbours = previousIgnore;
-                fakeWorldClient.renderX = previousX;
-                fakeWorldClient.renderY = previousY;
-                fakeWorldClient.renderZ = previousZ;
-                fakeWorldClient.movingDir = previousDir;
                 fakeWorldClient.renderBlock = previousRenderBlock;
                 fakeWorldClient.renderMeta = previousRenderMeta;
             }

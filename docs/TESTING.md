@@ -358,9 +358,10 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
 - [ ] Move a frame/glass cage and look at it from outside, through the open
       frame centers, and from inside; no frame/glass faces disappear, including
       on a repeat move of the same cage.
-- [ ] Move a frame column past a static frame or glass wall; faces that separate
-      along the move direction stay visible, and adjacent frame/glass surfaces
-      do not flicker (no z-fighting) while moving or when they come to rest.
+- [ ] Move a frame column past a static frame, glass wall or pusher/slider;
+      faces that separate from a static block stay visible for the whole move,
+      and adjacent frame/glass surfaces do not flicker (no z-fighting) while
+      moving or when they come to rest.
 
 ### Blocks, drops and optional mods
 
