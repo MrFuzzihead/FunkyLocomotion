@@ -362,6 +362,8 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
       faces that separate from a static block stay visible for the whole move,
       and adjacent frame/glass surfaces do not flicker (no z-fighting) while
       moving or when they come to rest.
+- [ ] A mover resting on grass or sliding past a pusher keeps normal face
+      brightness; no face is rendered black or noticeably darker than the others.
 
 ### Blocks, drops and optional mods
 

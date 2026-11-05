@@ -47,6 +47,7 @@ public class FakeWorldClient extends WorldClient {
      * culling between blocks of the moving structure stays exact.
      */
     public boolean ignoreStaticNeighbours = false;
+    public int renderX, renderY, renderZ;
     /**
      * Block currently being drawn by the mover renderer. When it is a
      * transparent cube (glass/ice), a neighbouring frame is reported as this
@@ -184,6 +185,14 @@ public class FakeWorldClient extends WorldClient {
     @Override
     @SideOnly(Side.CLIENT)
     public int getLightBrightnessForSkyBlocks(int x, int y, int z, int minBrightness) {
+        // While a mover is in flight, static neighbours are ignored for face
+        // culling. Their light would otherwise be baked into the visible face
+        // (a face next to an opaque block or under a grass block comes out black
+        // or dark), so light the mover from its own position instead.
+        if (ignoreStaticNeighbours && getTile(x, y, z) == null) {
+            return world.getLightBrightnessForSkyBlocks(renderX, renderY, renderZ, minBrightness);
+        }
+
         return world.getLightBrightnessForSkyBlocks(x, y, z, minBrightness);
     }
 

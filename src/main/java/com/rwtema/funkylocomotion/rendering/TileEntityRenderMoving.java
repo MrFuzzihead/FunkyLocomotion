@@ -262,9 +262,15 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             // faces stay culled. Non-opaque movers also drop coplanar
             // frame/glass faces (back-face culling is off for them).
             boolean previousIgnore = fakeWorldClient.ignoreStaticNeighbours;
+            int previousX = fakeWorldClient.renderX;
+            int previousY = fakeWorldClient.renderY;
+            int previousZ = fakeWorldClient.renderZ;
             Block previousRenderBlock = fakeWorldClient.renderBlock;
             int previousRenderMeta = fakeWorldClient.renderMeta;
 
+            fakeWorldClient.renderX = mover.xCoord;
+            fakeWorldClient.renderY = mover.yCoord;
+            fakeWorldClient.renderZ = mover.zCoord;
             fakeWorldClient.ignoreStaticNeighbours = mover.offset(false) != 0;
             fakeWorldClient.renderBlock = mover.block;
             fakeWorldClient.renderMeta = mover.meta;
@@ -294,6 +300,9 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                 mover.skipPass[pass] = true;
             } finally {
                 fakeWorldClient.ignoreStaticNeighbours = previousIgnore;
+                fakeWorldClient.renderX = previousX;
+                fakeWorldClient.renderY = previousY;
+                fakeWorldClient.renderZ = previousZ;
                 fakeWorldClient.renderBlock = previousRenderBlock;
                 fakeWorldClient.renderMeta = previousRenderMeta;
             }
