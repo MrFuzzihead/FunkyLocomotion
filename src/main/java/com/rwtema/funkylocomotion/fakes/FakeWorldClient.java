@@ -139,6 +139,12 @@ public class FakeWorldClient extends WorldClient {
 
     @Override
     public Block getBlock(int x, int y, int z) {
+        // The mover being drawn owns its coordinates. The tile entity may no
+        // longer be in the chunk map (finished-mover ghost) and a new move may
+        // already have put a different mover there, so never trust the world for
+        // the block at the render position.
+        if (isRenderPosition(x, y, z)) return renderBlock;
+
         TileMovingClient tile = getTile(x, y, z);
         boolean mover = tile != null;
         Block block;
@@ -160,6 +166,10 @@ public class FakeWorldClient extends WorldClient {
         }
 
         return block;
+    }
+
+    private boolean isRenderPosition(int x, int y, int z) {
+        return renderBlock != null && x == renderX && y == renderY && z == renderZ;
     }
 
     private static boolean isTransparentCube(Block block) {
@@ -208,6 +218,8 @@ public class FakeWorldClient extends WorldClient {
 
     @Override
     public int getBlockMetadata(int x, int y, int z) {
+        if (isRenderPosition(x, y, z)) return renderMeta;
+
         TileMovingClient tile = getTile(x, y, z);
         if (tile == null) return world.getBlockMetadata(x, y, z);
 
