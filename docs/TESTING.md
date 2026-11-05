@@ -278,7 +278,10 @@ checks. For the full matrix see [`AUDIT.md`](AUDIT.md) §13.
 - [ ] Trigger a failing tile recreation (e.g. a deliberately broken optional
       mod tile) and verify other movers in the same batch still finish.
 - [ ] Move a large frame and confirm the client does not receive a full chunk
-      resend for every moved block.
+      resend for every moved block (one resend per affected chunk at finish is
+      expected).
+- [ ] Watch the exact finish of a move; the structure does not blink invisible
+      or transparent for a frame before the destination chunk is remeshed.
 
 ### Descriptions and client cache
 
