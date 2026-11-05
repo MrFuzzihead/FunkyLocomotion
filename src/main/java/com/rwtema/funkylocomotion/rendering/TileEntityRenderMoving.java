@@ -16,6 +16,7 @@ import net.minecraft.util.Facing;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
@@ -219,6 +220,17 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             GL11.glDisable(GL11.GL_CULL_FACE);
         }
 
+        // A mover can be flush with a static block (or with another mover of a
+        // different type). Nudge the depth of the moving geometry so a coplanar
+        // face cannot flicker against the other one. Non-opaque movers win the
+        // tie (they are drawn from both sides); opaque movers lose it.
+        GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+        if (mover.block.isOpaqueCube()) {
+            GL11.glPolygonOffset(1.0F, 1.0F);
+        } else {
+            GL11.glPolygonOffset(-1.0F, -1.0F);
+        }
+
         if (Minecraft.isAmbientOcclusionEnabled()) {
             GL11.glShadeModel(GL11.GL_SMOOTH);
         } else {
@@ -241,6 +253,30 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
             boolean rendered = false;
             boolean failed = false;
+
+            // While the mover is between its source and destination it is not
+            // touching static neighbours along the move axis, so do not cull
+            // those faces. Faces perpendicular to the move keep their static
+            // neighbour, because their adjacency does not change.
+            // Movers still report their moved block, so the structure's own
+            // internal faces stay culled. Non-opaque movers also drop coplanar
+            // frame/glass faces (back-face culling is off for them).
+            boolean previousIgnore = fakeWorldClient.ignoreStaticNeighbours;
+            int previousX = fakeWorldClient.renderX;
+            int previousY = fakeWorldClient.renderY;
+            int previousZ = fakeWorldClient.renderZ;
+            ForgeDirection previousDir = fakeWorldClient.movingDir;
+            Block previousRenderBlock = fakeWorldClient.renderBlock;
+            int previousRenderMeta = fakeWorldClient.renderMeta;
+
+            fakeWorldClient.renderX = mover.xCoord;
+            fakeWorldClient.renderY = mover.yCoord;
+            fakeWorldClient.renderZ = mover.zCoord;
+            fakeWorldClient.movingDir = mover.dir >= 0 && mover.dir < 6 ? ForgeDirection.getOrientation(mover.dir)
+                : ForgeDirection.UNKNOWN;
+            fakeWorldClient.ignoreStaticNeighbours = mover.offset(false) != 0;
+            fakeWorldClient.renderBlock = mover.block;
+            fakeWorldClient.renderMeta = mover.meta;
             try {
                 rendered = renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord);
             } catch (Exception | LinkageError e) {
@@ -265,6 +301,14 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
                 mover.cachedState[pass] = null;
                 mover.skipPass[pass] = true;
+            } finally {
+                fakeWorldClient.ignoreStaticNeighbours = previousIgnore;
+                fakeWorldClient.renderX = previousX;
+                fakeWorldClient.renderY = previousY;
+                fakeWorldClient.renderZ = previousZ;
+                fakeWorldClient.movingDir = previousDir;
+                fakeWorldClient.renderBlock = previousRenderBlock;
+                fakeWorldClient.renderMeta = previousRenderMeta;
             }
 
             MoverRenderResult result = MoverRenderResult.classify(failed, rendered, tessellator.rawBufferIndex);
@@ -283,6 +327,8 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
             tessellator.draw();
         }
+        GL11.glPolygonOffset(0.0F, 0.0F);
+        GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
         RenderHelper.enableStandardItemLighting();
         return true;
     }

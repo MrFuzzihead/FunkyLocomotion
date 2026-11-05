@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.network.NetHandlerPlayClient;
@@ -25,6 +26,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.WorldEvent;
 
+import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -37,6 +39,26 @@ public class FakeWorldClient extends WorldClient {
     private static final Map<World, FakeWorldClient> cache = new ConcurrentHashMap<World, FakeWorldClient>();
     public double offset = 0;
     public ForgeDirection dir = ForgeDirection.UNKNOWN;
+    /**
+     * When set, non-mover positions along the move axis are reported as air.
+     * Used while building a mover's static geometry: the mover is translated
+     * between its source and destination, so a face that will eventually touch
+     * a static block is still visible during the animation. Faces perpendicular
+     * to the move axis keep their static neighbour, because their adjacency does
+     * not change. Movers always report their moved block, so culling between
+     * blocks of the moving structure stays exact.
+     */
+    public boolean ignoreStaticNeighbours = false;
+    public int renderX, renderY, renderZ;
+    public ForgeDirection movingDir = ForgeDirection.UNKNOWN;
+    /**
+     * Block currently being drawn by the mover renderer. When it is a
+     * transparent cube (glass/ice), a neighbouring frame is reported as this
+     * block so the glass's own side check hides the coplanar glass face instead
+     * of z-fighting with the frame face.
+     */
+    public Block renderBlock = null;
+    public int renderMeta = 0;
     final World world;
     final WorldClient worldClient;
 
@@ -121,9 +143,37 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public Block getBlock(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        if (tile != null) return tile.block;
+        boolean mover = tile != null;
+        Block block;
 
-        return world.getBlock(x, y, z);
+        if (mover) {
+            block = tile.block;
+        } else if (ignoreStaticNeighbours && differsAlongMoveAxis(x, y, z)) {
+            return Blocks.air;
+        } else {
+            block = world.getBlock(x, y, z);
+        }
+
+        if (mover && block instanceof BlockFrame && isTransparentCube(renderBlock)) {
+            // Two movers are both drawn with back-face culling disabled, so
+            // coplanar frame/glass faces would z-fight from either side. Report
+            // the frame as the glass block so the glass side check hides its
+            // duplicate; the frame's face is drawn double-sided and stays.
+            return renderBlock;
+        }
+
+        return block;
+    }
+
+    private static boolean isTransparentCube(Block block) {
+        return block != null && (block.getMaterial() == Material.glass || block.getMaterial() == Material.ice);
+    }
+
+    private boolean differsAlongMoveAxis(int x, int y, int z) {
+        ForgeDirection dir = movingDir;
+        if (dir == null) return false;
+        return (dir.offsetX != 0 && x != renderX) || (dir.offsetY != 0 && y != renderY)
+            || (dir.offsetZ != 0 && z != renderZ);
     }
 
     @Override
@@ -161,7 +211,14 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public int getBlockMetadata(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile == null ? world.getBlockMetadata(x, y, z) : tile.meta;
+        if (tile == null) return world.getBlockMetadata(x, y, z);
+
+        // Keep the substituted frame neighbour's metadata in sync with its
+        // substituted block, or vanilla glass's same-block metadata check would
+        // decide the faces differ and render the coplanar glass face anyway.
+        if (tile.block instanceof BlockFrame && isTransparentCube(renderBlock)) return renderMeta;
+
+        return tile.meta;
     }
 
     @Override
