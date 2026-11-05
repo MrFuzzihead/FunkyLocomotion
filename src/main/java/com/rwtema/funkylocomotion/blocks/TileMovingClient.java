@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.shader.TesselatorVertexState;
 import net.minecraft.init.Blocks;
@@ -43,12 +44,20 @@ public class TileMovingClient extends TileMovingBase {
     public boolean failedToRenderInFirstPass = false;
     public int renderCacheGeneration = -1;
 
+    private boolean ghost = false;
+    private int ghostTicks = 0;
+
     public TileMovingClient() {
         super(Side.CLIENT);
     }
 
     @Override
     public void updateEntity() {
+        if (ghost) {
+            if (--ghostTicks <= 0) removeGhost();
+            return;
+        }
+
         if (time < maxTime) {
             super.updateEntity();
         }
@@ -56,9 +65,59 @@ public class TileMovingClient extends TileMovingBase {
 
     @Override
     public void invalidate() {
+        if (ghost) return;
+
+        // At the end of a move the client removes this tile entity as soon as the
+        // real block change arrives, but the destination chunk's render mesh can
+        // be rebuilt a frame later. Keep the finished mover rendering the real
+        // block for a couple of ticks so that frame does not show a hole.
+        if (canGhost()) {
+            makeGhost();
+            return;
+        }
+
         super.invalidate();
         if (rawTile && tile != null) tile.invalidate();
         // A removed mover changes which faces its neighbours should render.
+        MoverRenderState.markDirty();
+    }
+
+    private boolean canGhost() {
+        if (worldObj == null || !worldObj.isRemote) return false;
+        if (Minecraft.getMinecraft().theWorld != worldObj) return false;
+        if (maxTime <= 0 || time < maxTime - 1) return false;
+        if (!worldObj.blockExists(xCoord, yCoord, zCoord)) return false;
+
+        Block realBlock = worldObj.getBlock(xCoord, yCoord, zCoord);
+        return realBlock != Blocks.air && realBlock != BlockMoving.instance;
+    }
+
+    private void makeGhost() {
+        ghost = true;
+        ghostTicks = 2;
+
+        block = worldObj.getBlock(xCoord, yCoord, zCoord);
+        meta = worldObj.getBlockMetadata(xCoord, yCoord, zCoord);
+        time = maxTime;
+        render = true;
+        error = false;
+
+        // addTileEntity handles the "world is iterating its tile entity list"
+        // case (it queues into addedTileEntityList instead of corrupting the
+        // list being iterated).
+        if (!worldObj.loadedTileEntityList.contains(this)) worldObj.addTileEntity(this);
+        ChunkRerenderer.markBlock(xCoord, yCoord, zCoord);
+    }
+
+    private void removeGhost() {
+        ghost = false;
+        // Do not touch loadedTileEntityList here: this runs inside its iterator.
+        // invalidate() only sets the flag and World.updateEntities removes it.
+        super.invalidate();
+        if (rawTile && tile != null) {
+            tile.invalidate();
+            tile = null;
+        }
         MoverRenderState.markDirty();
     }
 

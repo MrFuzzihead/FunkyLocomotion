@@ -435,7 +435,6 @@ public class MoveManager {
         List<TileMovingServer> tiles = MovingTileRegistry.getTilesFinishedMoving();
         Set<TileMovingServer> failed = new HashSet<TileMovingServer>();
         Map<BlockPos, Integer> oldOpacities = new HashMap<BlockPos, Integer>();
-        Set<Chunk> chunks = new HashSet<Chunk>();
 
         for (TileMovingServer tile : tiles) tile.finishing = true;
 
@@ -467,7 +466,6 @@ public class MoveManager {
                         pos,
                         BlockHelper.getBlock(world, pos)
                             .getLightOpacity(world, pos.x, pos.y, pos.z));
-                    chunks.add(chunk);
                     world.removeTileEntity(pos.x, pos.y, pos.z);
                     BlockHelper.silentClear(chunk, pos);
                 } catch (Throwable t) {
@@ -541,22 +539,6 @@ public class MoveManager {
                 }
             }
             vars.put("tile", BLANK);
-
-            // Send Update Packets. The block changes were written directly into
-            // the chunk, and the client removes the mover tile entities when the
-            // individual block changes arrive. If the destination chunk's render
-            // mesh update is deferred (occlusion query / update budget), there is
-            // a frame where the real blocks are not in the mesh yet, so the
-            // structure is briefly invisible. Re-sending the affected chunks (one
-            // per chunk, not per block) lets the client rebuild them together with
-            // the final block data.
-            section = "Send Update Packets";
-            for (Chunk chunk : chunks) {
-                vars.put("chunk", chunk);
-                chunk.isModified = true;
-                FLNetwork.updateChunk(chunk);
-            }
-            vars.put("chunk", BLANK);
 
             // Redo cached Activation
             section = "Redo Activation";
