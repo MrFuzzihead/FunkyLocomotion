@@ -24,25 +24,28 @@ public class RenderBlockSlider extends RenderBlockPusher {
         block.setBlockBoundsForItemRender();
         renderer.setRenderBoundsFromBlock(block);
 
-        GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
-        GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
+        GL11.glPushMatrix();
+        try {
+            GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
+            GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
 
-        setRotations(renderer, Facing.oppositeSide[meta % 6]);
-        for (int s = 0; s < 6; s++) {
-            if (s == slide) FLRenderHelper.renderItemFace(BlockSlider.iconSliderPush, s, renderer);
-            else if (Facing.oppositeSide[s] == slide)
-                FLRenderHelper.renderItemFace(BlockSlider.iconSlider, s, renderer);
-            else FLRenderHelper.renderItemFace(block, meta, s, renderer);
+            setRotations(renderer, Facing.oppositeSide[meta % 6]);
+            for (int s = 0; s < 6; s++) {
+                if (s == slide) FLRenderHelper.renderItemFace(BlockSlider.iconSliderPush, s, renderer);
+                else if (Facing.oppositeSide[s] == slide)
+                    FLRenderHelper.renderItemFace(BlockSlider.iconSlider, s, renderer);
+                else FLRenderHelper.renderItemFace(block, meta, s, renderer);
 
+            }
+            resetRotations(renderer);
+
+            setRotations(renderer, slide);
+            FLRenderHelper.renderItemFace(BlockSlider.iconSlider1, orth, renderer);
+            FLRenderHelper.renderItemFace(BlockSlider.iconSlider1, Facing.oppositeSide[orth], renderer);
+        } finally {
+            GL11.glPopMatrix();
+            resetRotations(renderer);
         }
-        resetRotations(renderer);
-
-        setRotations(renderer, slide);
-        FLRenderHelper.renderItemFace(BlockSlider.iconSlider1, orth, renderer);
-        FLRenderHelper.renderItemFace(BlockSlider.iconSlider1, Facing.oppositeSide[orth], renderer);
-        resetRotations(renderer);
-
-        GL11.glTranslatef(0.5F, 0.5F, 0.5F);
 
     }
 
@@ -53,18 +56,26 @@ public class RenderBlockSlider extends RenderBlockPusher {
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile == null || tile.getClass() != TileSlider.class) return flag;
 
-        renderer.renderAllFaces = false;
+        int previousRenderSide = BlockSlider.getRenderSide();
+        boolean previousRenderAllFaces = renderer.renderAllFaces;
 
         ForgeDirection dir = ((TileSlider) tile).getFacing();
         ForgeDirection arrowDir = ((TileSlider) tile).getSlideDir();
-        BlockSlider.renderSide = TileSlider.getOrthogonal(arrowDir, dir)
+        int renderSide = TileSlider.getOrthogonal(arrowDir, dir)
             .ordinal();
+
+        renderer.renderAllFaces = false;
+        BlockSlider.setRenderSide(renderSide);
         renderer.setOverrideBlockTexture(BlockSlider.iconSlider1);
         setRotations(renderer, arrowDir.ordinal());
-        flag = flag | renderer.renderStandardBlock(block, x, y, z);
-        resetRotations(renderer);
-        renderer.clearOverrideBlockTexture();
-        BlockSlider.renderSide = -1;
+        try {
+            flag = flag | renderer.renderStandardBlock(block, x, y, z);
+        } finally {
+            BlockSlider.setRenderSide(previousRenderSide);
+            resetRotations(renderer);
+            renderer.clearOverrideBlockTexture();
+            renderer.renderAllFaces = previousRenderAllFaces;
+        }
 
         return flag;
 

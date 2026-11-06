@@ -37,9 +37,14 @@ public class MoveCheckReflector implements IMoveChecker {
             return true;
         } catch (IllegalAccessException e) {
             return true;
+        } catch (LinkageError e) {
+            // A mod class can reference a client-only type in another method
+            // signature (IIconRegister is common); resolving _Immovable on a
+            // dedicated server must not spam a NoClassDefFoundError. Treat an
+            // unresolvable class as movable and let the explicit checks decide.
+            return true;
         } catch (RuntimeException e) {
             return true;
-
         } catch (Throwable e) {
             e.printStackTrace();
             return true;

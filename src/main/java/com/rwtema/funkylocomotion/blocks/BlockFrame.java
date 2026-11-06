@@ -10,6 +10,9 @@ import com.rwtema.funkylocomotion.api.IStickyBlock;
 
 public class BlockFrame extends Block implements IStickyBlock {
 
+    /** The custom frame renderer id; assigned by the client proxy at startup. */
+    public static int renderType = 0;
+
     public BlockFrame() {
         super(Material.rock);
         this.setBlockName("funkylocomotion:frame");
@@ -20,6 +23,11 @@ public class BlockFrame extends Block implements IStickyBlock {
     @Override
     public boolean shouldSideBeRendered(IBlockAccess world, int x, int y, int z, int side) {
         return super.shouldSideBeRendered(world, x, y, z, side) && !(world.getBlock(x, y, z) instanceof BlockFrame);
+    }
+
+    @Override
+    public int getRenderType() {
+        return renderType;
     }
 
     @Override

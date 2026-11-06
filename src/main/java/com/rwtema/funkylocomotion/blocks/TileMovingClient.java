@@ -1,10 +1,12 @@
 package com.rwtema.funkylocomotion.blocks;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.shader.TesselatorVertexState;
 import net.minecraft.init.Blocks;
@@ -13,22 +15,23 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
-import com.rwtema.funkylocomotion.helper.BlockHelper;
+import com.rwtema.funkylocomotion.movers.MoveSnapshot;
 import com.rwtema.funkylocomotion.rendering.ChunkRerenderer;
+import com.rwtema.funkylocomotion.rendering.MoverRenderState;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public class TileMovingClient extends TileMovingBase {
 
-    public static final HashMap<ChunkCoordinates, WeakReference<TileEntity>> cachedTiles = new HashMap<ChunkCoordinates, WeakReference<TileEntity>>();
+    public static final Map<TileCacheKey, WeakReference<TileEntity>> cachedTiles = new ConcurrentHashMap<TileCacheKey, WeakReference<TileEntity>>();
     public static final HashSet<Class> renderBlackList = new HashSet<Class>();
     public static final HashSet<Class> renderErrorList = new HashSet<Class>();
     public Block block = Blocks.air;
@@ -39,6 +42,10 @@ public class TileMovingClient extends TileMovingBase {
     public boolean rawTile = false;
     public boolean init = false;
     public boolean failedToRenderInFirstPass = false;
+    public int renderCacheGeneration = -1;
+
+    private boolean ghost = false;
+    private int ghostTicks = 0;
 
     public TileMovingClient() {
         super(Side.CLIENT);
@@ -46,15 +53,83 @@ public class TileMovingClient extends TileMovingBase {
 
     @Override
     public void updateEntity() {
+        if (ghost) {
+            if (--ghostTicks <= 0) removeGhost();
+            return;
+        }
+
         if (time < maxTime) {
             super.updateEntity();
+        } else if (finishRenderTicks == 0) {
+            finishRenderTicks = 1;
         }
     }
 
     @Override
     public void invalidate() {
+        if (ghost) return;
+
+        // At the end of a move the client removes this tile entity as soon as the
+        // real block change arrives, but the destination chunk's render mesh can
+        // be rebuilt a frame later. Keep the finished mover rendering the real
+        // block for a couple of ticks so that frame does not show a hole.
+        if (canGhost()) {
+            makeGhost();
+            return;
+        }
+
         super.invalidate();
         if (rawTile && tile != null) tile.invalidate();
+        // A removed mover changes which faces its neighbours should render.
+        MoverRenderState.markDirty();
+    }
+
+    private boolean canGhost() {
+        if (worldObj == null || !worldObj.isRemote) return false;
+        if (Minecraft.getMinecraft().theWorld != worldObj) return false;
+        if (maxTime <= 0 || time < maxTime - 1) return false;
+        if (!worldObj.blockExists(xCoord, yCoord, zCoord)) return false;
+
+        Block realBlock = worldObj.getBlock(xCoord, yCoord, zCoord);
+        return realBlock != Blocks.air && realBlock != BlockMoving.instance;
+    }
+
+    private void makeGhost() {
+        ghost = true;
+        ghostTicks = 2;
+
+        block = worldObj.getBlock(xCoord, yCoord, zCoord);
+        meta = worldObj.getBlockMetadata(xCoord, yCoord, zCoord);
+        time = maxTime;
+        // The real destination block is already in the world: pin the ghost at
+        // the destination instead of replaying the final step as a duplicate.
+        finishRenderTicks = 1;
+        render = true;
+        error = false;
+
+        // addTileEntity handles the "world is iterating its tile entity list"
+        // case (it queues into addedTileEntityList instead of corrupting the
+        // list being iterated).
+        if (!worldObj.loadedTileEntityList.contains(this)) worldObj.addTileEntity(this);
+        ChunkRerenderer.markBlock(xCoord, yCoord, zCoord);
+    }
+
+    private void removeGhost() {
+        ghost = false;
+        // Do not touch loadedTileEntityList here: this runs inside its iterator.
+        // invalidate() only sets the flag and World.updateEntities removes it.
+        super.invalidate();
+        if (rawTile && tile != null) {
+            tile.invalidate();
+            tile = null;
+        }
+        MoverRenderState.markDirty();
+    }
+
+    @Override
+    public void validate() {
+        super.validate();
+        MoverRenderState.markDirty();
     }
 
     @Override
@@ -62,11 +137,18 @@ public class TileMovingClient extends TileMovingBase {
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
 
         NBTTagCompound tag = pkt.func_148857_g();
-        block = Block.getBlockById(tag.getInteger("Block"));
-        meta = tag.getInteger("Meta");
+        Block packetBlock = MoveSnapshot.readBlock(tag);
+        if (packetBlock == null) {
+            packetBlock = Blocks.air;
+            error = true;
+            render = false;
+        }
+        block = packetBlock;
+        meta = MoveSnapshot.readMeta(tag);
 
         time = tag.getInteger("Time");
         maxTime = tag.getInteger("MaxTime");
+        finishRenderTicks = 0;
 
         lightLevel = tag.getInteger("Light");
         lightOpacity = tag.getShort("Opacity");
@@ -77,16 +159,26 @@ public class TileMovingClient extends TileMovingBase {
             collisions = AxisTags(tag.getTagList("Collisions", 10));
         }
 
-        BlockHelper.postUpdateBlock(worldObj, new BlockPos(this));
+        // The client only needs a render update; postUpdateBlock's light
+        // recalculation is for direct server-side writes and is very expensive
+        // for every block in a large moving frame.
+        if (worldObj != null && worldObj.blockExists(xCoord, yCoord, zCoord)) {
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+        }
 
         dir = tag.getByte("Dir");
+
+        // A mover tile entity can be reused by a later move. Never keep the
+        // previous move's raw tile if this packet does not supply a replacement.
+        this.tile = null;
+        rawTile = false;
 
         TileEntity tile = null;
 
         if (this.dir >= 0 && this.dir < 8 && this.dir != 6) {
             ForgeDirection d = ForgeDirection.getOrientation(this.dir);
             WeakReference<TileEntity> ref = cachedTiles
-                .remove(new ChunkCoordinates(xCoord - d.offsetX, yCoord - d.offsetY, zCoord - d.offsetZ));
+                .remove(new TileCacheKey(worldObj, xCoord - d.offsetX, yCoord - d.offsetY, zCoord - d.offsetZ));
 
             if (ref != null) tile = ref.get();
         }
@@ -100,6 +192,10 @@ public class TileMovingClient extends TileMovingBase {
             tile.blockMetadata = this.meta;
 
             tile.setWorldObj(FakeWorldClient.getFakeWorldWrapper(this.worldObj));
+            // The tile was invalidated when it was removed from the source chunk.
+            // Clear that flag now that it has been repurposed, otherwise TESRs and
+            // mods that skip invalid tile entities will skip it too.
+            tile.validate();
             this.tile = tile;
             render = true;
         } else {
@@ -125,40 +221,90 @@ public class TileMovingClient extends TileMovingBase {
         if (render && !init) ChunkRerenderer.markBlock(xCoord, yCoord, zCoord);
 
         init = true;
+
+        // The block, metadata, direction and the reused raw tile can all change
+        // between moves at the same position. Drop cached geometry so a mover is
+        // never drawn with the previous move's model (for example a chest drawn
+        // with a furnace's cached geometry) or with faces culled for its old
+        // neighbours.
+        MoverRenderState.markDirty();
     }
 
     public boolean checkClass(Object o) {
         if (o == null) return false;
-        if (renderBlackList.contains(o.getClass())) {
-            this.render = false;
-            return true;
+
+        Class<?> clazz = o.getClass();
+        for (Class<?> blocked : renderBlackList) {
+            if (blocked.isAssignableFrom(clazz)) {
+                this.render = false;
+                return true;
+            }
         }
 
-        if (renderErrorList.contains(o.getClass())) {
-            this.render = false;
-            this.error = true;
-            return true;
+        for (Class<?> errored : renderErrorList) {
+            if (errored.isAssignableFrom(clazz)) {
+                this.render = false;
+                this.error = true;
+                return true;
+            }
         }
 
         return false;
     }
 
+    public static void clearCachedTiles(World world) {
+        int dimension = world == null || world.provider == null ? Integer.MIN_VALUE : world.provider.dimensionId;
+        cachedTiles.keySet()
+            .removeIf(key -> key.dimension == dimension);
+    }
+
     @SideOnly(Side.CLIENT)
     public AxisAlignedBB getRenderBoundingBox() {
+        AxisAlignedBB box = AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1);
 
-        AxisAlignedBB other;
-        if (tile != null) other = tile.getRenderBoundingBox();
-        else other = block
-            .getCollisionBoundingBoxFromPool(FakeWorldClient.getFakeWorldWrapper(worldObj), xCoord, yCoord, zCoord);
+        AxisAlignedBB other = null;
+        if (tile != null) {
+            try {
+                other = tile.getRenderBoundingBox();
+            } catch (Throwable ignored) {
+                // A broken optional TESR should not break culling for every mover.
+            }
+        } else if (block != null && block != Blocks.air && worldObj != null) {
+            try {
+                // Use the real world; getRenderBoundingBox can be called on a
+                // Celeritas worker thread, and constructing a FakeWorldClient there
+                // fires WorldEvent.Load off the client thread.
+                other = block.getCollisionBoundingBoxFromPool(worldObj, xCoord, yCoord, zCoord);
+            } catch (Throwable ignored) {
+                // Fall back to the full block box below.
+            }
+        }
 
-        if (other == null)
-            other = AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1);
-        else other = other
-            .func_111270_a(AxisAlignedBB.getBoundingBox(xCoord, yCoord, zCoord, xCoord + 1, yCoord + 1, zCoord + 1));
+        if (other != null) box = box.func_111270_a(other);
+
+        if (maxTime <= 0) return box;
 
         double h = offset(true);
-        ForgeDirection d = ForgeDirection.getOrientation(this.dir);
-        return other.getOffsetBoundingBox(h * d.offsetX, h * d.offsetY, h * d.offsetZ);
+        if (dir == 6 || dir == 7) {
+            // Teleport movers scale around the block center instead of translating.
+            double scale = dir == 6 ? h + 1.0 : -h;
+            if (scale < 0.0) scale = 0.0;
+            double cx = (box.minX + box.maxX) * 0.5;
+            double cy = (box.minY + box.maxY) * 0.5;
+            double cz = (box.minZ + box.maxZ) * 0.5;
+            return AxisAlignedBB.getBoundingBox(
+                cx + (box.minX - cx) * scale,
+                cy + (box.minY - cy) * scale,
+                cz + (box.minZ - cz) * scale,
+                cx + (box.maxX - cx) * scale,
+                cy + (box.maxY - cy) * scale,
+                cz + (box.maxZ - cz) * scale);
+        }
+
+        if (dir < 0 || dir >= 6) return box;
+
+        ForgeDirection d = ForgeDirection.getOrientation(dir);
+        return box.getOffsetBoundingBox(h * d.offsetX, h * d.offsetY, h * d.offsetZ);
     }
 
     @Override

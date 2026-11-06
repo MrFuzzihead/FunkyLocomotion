@@ -4,7 +4,10 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 
 import com.rwtema.funkylocomotion.asm.WrenchFactory;
 import com.rwtema.funkylocomotion.blocks.BlockBooster;
@@ -18,15 +21,19 @@ import com.rwtema.funkylocomotion.blocks.TileMovingServer;
 import com.rwtema.funkylocomotion.blocks.TilePusher;
 import com.rwtema.funkylocomotion.blocks.TileSlider;
 import com.rwtema.funkylocomotion.blocks.TileTeleport;
+import com.rwtema.funkylocomotion.command.CommandFunkyLocomotion;
+import com.rwtema.funkylocomotion.description.DescriptorRegistry;
 import com.rwtema.funkylocomotion.dispenser.FrameDispenserAcion;
 import com.rwtema.funkylocomotion.dispenser.WrenchDispenserAction;
 import com.rwtema.funkylocomotion.factory.FactoryRegistry;
+import com.rwtema.funkylocomotion.fmp.FMPDescriber;
 import com.rwtema.funkylocomotion.fmp.FMPMover;
 import com.rwtema.funkylocomotion.fmp.FMPStickness;
 import com.rwtema.funkylocomotion.items.ItemBlockFrame;
 import com.rwtema.funkylocomotion.items.ItemBlockPusher;
 import com.rwtema.funkylocomotion.items.ItemBlockTeleporter;
 import com.rwtema.funkylocomotion.items.ItemWrench;
+import com.rwtema.funkylocomotion.movepermissions.MoveBlacklist;
 import com.rwtema.funkylocomotion.movers.MoverEventHandler;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.proxydelegates.COFHStickiness;
@@ -40,13 +47,15 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLInterModComms;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 @Mod(
     modid = FunkyLocomotion.MODID,
     name = FunkyLocomotion.MODNAME,
     version = Tags.VERSION,
-    dependencies = "after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)")
+    dependencies = "required-after:CoFHCore;after:ForgeMultipart;after:Thaumcraft;after:ThermalExpansion;after:ThermalFoundation;required-after:Forge@[10.13.1.1217,)",
+    guiFactory = "com.rwtema.funkylocomotion.client.FunkyLocomotionGuiFactory")
 public class FunkyLocomotion {
 
     public static final String MODID = "funkylocomotion";
@@ -64,26 +73,27 @@ public class FunkyLocomotion {
     public static BlockSlider slider;
     public static BlockBooster booster;
     public static BlockTeleport teleporter;
-    public static boolean redrawChunksInstantly;
+    public static String[] renderBlacklist = new String[0];
+    private static Configuration config;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         LogHelper.info("Let's Move!");
         FLNetwork.init();
 
-        Configuration config = new Configuration(event.getSuggestedConfigurationFile());
+        config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
-        TilePusher.maxTiles = config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024)
-            .getInt(1024);
-        TilePusher.powerPerTile = config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250)
-            .getInt(250);
+        applyMoveConfig();
         Recipes.shouldAddRecipes = config.get(Configuration.CATEGORY_GENERAL, "addRecipes", true)
             .getBoolean(true);
         Recipes.shouldAddFrameCopyResetRecipes = config
             .get(Configuration.CATEGORY_GENERAL, "addFrameCopyResetRecipes", true)
             .getBoolean(true);
-        redrawChunksInstantly = config.get("client", "redrawChunksInstantly", true)
-            .getBoolean(true);
+        renderBlacklist = config.getStringList(
+            "renderBlacklist",
+            "client",
+            new String[0],
+            "Tile entity class names that should never be rendered by a mover");
         if (config.hasChanged()) config.save();
 
         EntityMovingEventHandler.init();
@@ -118,23 +128,32 @@ public class FunkyLocomotion {
     public void init(FMLInitializationEvent event) {
         if (Loader.isModLoaded("ForgeMultipart")) {
             Block b = (Block) Block.blockRegistry.getObject("ForgeMultipart:block");
-            FactoryRegistry.moveFactoryMapBlock.put(b, new FMPMover());
-            FMPStickness.init(b);
+            if (b != null && b != Blocks.air) {
+                DescriptorRegistry.register(new FMPDescriber(), false);
+                FactoryRegistry.moveFactoryMapBlock.put(b, new FMPMover());
+                FMPStickness.init(b);
+            }
         }
 
-        try {
-            Class<?> nodeClazz = Class.forName("thaumcraft.api.nodes.INode");
-            Block b = (Block) Block.blockRegistry.getObject("Thaumcraft:blockAiry");
-            if (b != Blocks.air && nodeClazz != null) FactoryRegistry.moveFactoryMapBlock.put(b, new NodeMover());
-        } catch (ClassNotFoundException ignore) {
-
+        if (Loader.isModLoaded("Thaumcraft")) {
+            try {
+                Class<?> nodeClazz = Class.forName("thaumcraft.api.nodes.INode");
+                Block b = (Block) Block.blockRegistry.getObject("Thaumcraft:blockAiry");
+                if (b != null && b != Blocks.air && nodeClazz != null) {
+                    FactoryRegistry.moveFactoryMapBlock.put(b, new NodeMover());
+                }
+            } catch (Throwable t) {
+                LogHelper.errorThrowable("Unable to initialize Thaumcraft node support", t);
+            }
         }
 
-        try {
-            Class.forName("cofh.api.block.IBlockAppearance");
-            COFHStickiness.register();
-        } catch (ClassNotFoundException ignore) {
-
+        if (Loader.isModLoaded("CoFHCore")) {
+            try {
+                Class.forName("cofh.api.block.IBlockAppearance");
+                COFHStickiness.register();
+            } catch (Throwable t) {
+                LogHelper.errorThrowable("Unable to initialize CoFH appearance support", t);
+            }
         }
     }
 
@@ -143,11 +162,66 @@ public class FunkyLocomotion {
         Recipes.addRecipes();
     }
 
+    @EventHandler
+    public void serverStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new CommandFunkyLocomotion());
+    }
+
+    public static Configuration getConfig() {
+        return config;
+    }
+
+    private static void applyMoveConfig() {
+        Property maxBlocks = config.get(Configuration.CATEGORY_GENERAL, "maximumBlocksPushed", 1024);
+        maxBlocks.comment = "Maximum number of blocks that can be moved in one operation.";
+        TilePusher.maxTiles = TilePusher
+            .clampConfig(maxBlocks.getInt(1024), TilePusher.MIN_MAX_TILES, TilePusher.MAX_MAX_TILES);
+
+        Property energy = config.get(Configuration.CATEGORY_GENERAL, "energyPerBlock", 250);
+        energy.comment = "RF required per moved block. Set to 0 to disable RF entirely; negative values are treated as 0.";
+        TilePusher.powerPerTile = TilePusher
+            .clampConfig(energy.getInt(250), TilePusher.MIN_POWER_PER_TILE, TilePusher.MAX_POWER_PER_TILE);
+    }
+
+    public static void reloadConfig() {
+        if (config == null) return;
+
+        config.load();
+        applyMoveConfig();
+        renderBlacklist = config.getStringList(
+            "renderBlacklist",
+            "client",
+            new String[0],
+            "Tile entity class names that should never be rendered by a mover");
+
+        int capacity = TilePusher.energyCapacity(TilePusher.maxTiles, TilePusher.powerPerTile);
+        MinecraftServer server = MinecraftServer.getServer();
+        if (server != null) {
+            for (WorldServer world : server.worldServers) {
+                if (world == null || world.loadedTileEntityList == null) continue;
+                for (Object object : world.loadedTileEntityList) {
+                    if (object instanceof TilePusher) {
+                        TilePusher pusher = (TilePusher) object;
+                        pusher.energy.setCapacity(capacity);
+                        if (pusher.energy.getEnergyStored() > capacity) pusher.energy.setEnergyStored(capacity);
+                    } else if (object instanceof TileBooster) {
+                        TileBooster booster = (TileBooster) object;
+                        booster.energy.setCapacity(capacity);
+                        if (booster.energy.getEnergyStored() > capacity) booster.energy.setEnergyStored(capacity);
+                    }
+                }
+            }
+        }
+
+        proxy.reloadClientConfig();
+        if (config.hasChanged()) config.save();
+    }
+
+    @EventHandler
     public void handleIMC(FMLInterModComms.IMCEvent event) {
         for (FMLInterModComms.IMCMessage msg : event.getMessages()) {
             if ("blacklist".equals(msg.key) && msg.isStringMessage()) {
-                String s = msg.getStringValue();
-                // TODO
+                MoveBlacklist.add(msg.getStringValue());
             }
         }
     }

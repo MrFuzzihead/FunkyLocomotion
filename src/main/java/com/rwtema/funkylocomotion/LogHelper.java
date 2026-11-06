@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 public class LogHelper {
 
-    public static final Logger logger = LogManager.getLogger("newframes");
+    public static final Logger logger = LogManager.getLogger("funkylocomotion");
 
     public static final boolean isDeObf;
 
@@ -29,7 +29,7 @@ public class LogHelper {
             for (Object t : info2) temp.append(" ")
                 .append(t);
 
-            logger.info(info);
+            logger.info(temp.toString());
         }
     }
 
@@ -38,7 +38,7 @@ public class LogHelper {
         for (Object t : info2) temp.append(" ")
             .append(t);
 
-        logger.info(info);
+        logger.info(temp.toString());
     }
 
     public static void errorThrowable(String message, Throwable t) {
@@ -50,6 +50,6 @@ public class LogHelper {
         for (Object t : info2) temp.append(" ")
             .append(t);
 
-        logger.error(info);
+        logger.error(temp.toString());
     }
 }

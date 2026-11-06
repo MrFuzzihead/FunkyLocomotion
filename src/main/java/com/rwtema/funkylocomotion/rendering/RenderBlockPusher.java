@@ -25,14 +25,17 @@ public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
         block.setBlockBoundsForItemRender();
         renderer.setRenderBoundsFromBlock(block);
 
-        setRotations(renderer, Facing.oppositeSide[meta % 6]);
+        GL11.glPushMatrix();
+        try {
+            setRotations(renderer, Facing.oppositeSide[meta % 6]);
 
-        GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
-        GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
-        FLRenderHelper.renderBlock(block, meta, renderer, 0);
-        GL11.glTranslatef(0.5F, 0.5F, 0.5F);
-
-        resetRotations(renderer);
+            GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
+            GL11.glTranslatef(-0.5F, -0.5F, -0.5F);
+            FLRenderHelper.renderBlock(block, meta, renderer, 0);
+        } finally {
+            GL11.glPopMatrix();
+            resetRotations(renderer);
+        }
     }
 
     @Override
@@ -40,9 +43,11 @@ public class RenderBlockPusher implements ISimpleBlockRenderingHandler {
         RenderBlocks renderer) {
         int meta = Facing.oppositeSide[world.getBlockMetadata(x, y, z) % 6];
         setRotations(renderer, meta);
-        boolean flag = renderer.renderStandardBlock(block, x, y, z);
-        resetRotations(renderer);
-        return flag;
+        try {
+            return renderer.renderStandardBlock(block, x, y, z);
+        } finally {
+            resetRotations(renderer);
+        }
     }
 
     public void setRotations(RenderBlocks renderer, int meta) {

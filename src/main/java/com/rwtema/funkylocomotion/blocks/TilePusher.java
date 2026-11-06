@@ -4,19 +4,24 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import net.minecraft.block.Block;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
 import com.rwtema.funkylocomotion.api.BlockPos;
+import com.rwtema.funkylocomotion.api.IAdvStickyBlock;
 import com.rwtema.funkylocomotion.api.IStickyBlock;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
+import com.rwtema.funkylocomotion.movepermissions.MovePermissionRegistry;
 import com.rwtema.funkylocomotion.movers.IMover;
 import com.rwtema.funkylocomotion.movers.MoveManager;
+import com.rwtema.funkylocomotion.movers.MoveSourceHelper;
 import com.rwtema.funkylocomotion.particles.ObstructionHelper;
 import com.rwtema.funkylocomotion.proxydelegates.ProxyRegistry;
 
@@ -25,10 +30,17 @@ import cofh.api.energy.IEnergyReceiver;
 
 public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
-    public static int maxTiles = 256;
-    public static int powerPerTile = 1000;
-    public final EnergyStorage energy = new EnergyStorage(maxTiles * powerPerTile);
+    public static final int MIN_MAX_TILES = 1;
+    public static final int MAX_MAX_TILES = 8192;
+    public static final int MIN_POWER_PER_TILE = 0;
+    public static final int MAX_POWER_PER_TILE = 1000000;
+
+    public static int maxTiles = 1024;
+    public static int powerPerTile = 250;
+    public final EnergyStorage energy = new EnergyStorage(energyCapacity(maxTiles, powerPerTile));
     public boolean powered;
+    public String ownerName;
+    public UUID ownerId;
 
     public static final int[] moveTime = new int[] { 20, 10, 7, 5, 4, 3 };
 
@@ -41,7 +53,8 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
         energy.readFromNBT(tag);
-        powered = tag.getBoolean("Powered");
+        // Older saves used "Powered"; current writes use "powered". Read both.
+        powered = tag.getBoolean("powered") || tag.getBoolean("Powered");
     }
 
     @Override
@@ -49,6 +62,8 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
         super.writeToNBT(tag);
         energy.writeToNBT(tag);
         tag.setBoolean("powered", powered);
+        if (ownerName != null) tag.setString("OwnerName", ownerName);
+        if (ownerId != null) tag.setString("OwnerId", ownerId.toString());
     }
 
     @Override
@@ -76,7 +91,7 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
         ArrayList<BlockPos> posList = new ArrayList<BlockPos>();
         HashSet<BlockPos> posSet = new HashSet<BlockPos>();
-        getBlockPosIterate(world, home, start, posList, posSet);
+        if (!getBlockPosIterate(world, home, start, posList, posSet)) return null;
 
         return checkPositions(world, moveDir, posList, posSet);
     }
@@ -95,7 +110,7 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
         return fail ? null : posList;
     }
 
-    private void getBlockPosIterate(World world, BlockPos home, BlockPos start, ArrayList<BlockPos> posList,
+    private boolean getBlockPosIterate(World world, BlockPos home, BlockPos start, ArrayList<BlockPos> posList,
         HashSet<BlockPos> posSet) {
         LinkedList<BlockPos> toIterate = new LinkedList<BlockPos>();
         HashSet<BlockPos> toIterateSet = new HashSet<BlockPos>();
@@ -105,12 +120,27 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
         // for (int i = 0; i < toIterate.size(); i++) {
         while (!toIterate.isEmpty()) {
+            if (!hasCapacityFor(posList.size())) return false;
+
             BlockPos pos = toIterate.poll();
 
             posList.add(pos);
             posSet.add(pos);
 
             Block b = BlockHelper.getBlock(world, pos);
+
+            IAdvStickyBlock advanced = ProxyRegistry.getInterface(b, IAdvStickyBlock.class);
+            if (advanced != null) {
+                List<BlockPos> additional = advanced.getBlocksToMove(world, pos);
+                if (additional != null) {
+                    for (BlockPos newPos : additional) {
+                        if (newPos == null || home.equals(newPos) || toIterateSet.contains(newPos)) continue;
+                        if (!BlockHelper.canMoveBlock(world, newPos)) continue;
+                        toIterate.add(newPos);
+                        toIterateSet.add(newPos);
+                    }
+                }
+            }
 
             IStickyBlock stickyBlock = ProxyRegistry.getInterface(b, IStickyBlock.class);
 
@@ -131,9 +161,44 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
                 }
             }
         }
+        return true;
+    }
+
+    static boolean hasCapacityFor(int currentCount) {
+        return currentCount < maxTiles;
+    }
+
+    public static int energyCost(int blockCount) {
+        long cost = (long) Math.max(0, blockCount) * powerPerTile;
+        return cost > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) cost;
+    }
+
+    public static int energyCapacity(int maxTiles, int powerPerTile) {
+        long capacity = (long) clampConfig(maxTiles, MIN_MAX_TILES, MAX_MAX_TILES)
+            * clampConfig(powerPerTile, MIN_POWER_PER_TILE, MAX_POWER_PER_TILE);
+        return (int) Math.min(capacity, Integer.MAX_VALUE);
+    }
+
+    public static int clampConfig(int value, int min, int max) {
+        return value < min ? min : Math.min(value, max);
+    }
+
+    public void setOwner(EntityLivingBase entity) {
+        if (!(entity instanceof EntityPlayer)) return;
+
+        EntityPlayer player = (EntityPlayer) entity;
+        ownerName = player.getCommandSenderName();
+        ownerId = player.getGameProfile()
+            .getId();
+    }
+
+    public boolean canMoveByOwner() {
+        return MovePermissionRegistry.canMove(worldObj, xCoord, yCoord, zCoord, ownerName, ownerId);
     }
 
     public void startMoving() {
+        if (!canMoveByOwner()) return;
+
         int meta = getBlockMetadata();
         ForgeDirection dir = ForgeDirection.getOrientation(meta % 6)
             .getOpposite();
@@ -142,38 +207,16 @@ public class TilePusher extends TileEntity implements IEnergyReceiver, IMover {
 
         BlockPos pos = new BlockPos(xCoord, yCoord, zCoord);
         List<BlockPos> posList = getBlocks(worldObj, pos, dir, push);
-        if (posList != null) {
-            final int energy = posList.size() * powerPerTile;
-            if (this.energy.extractEnergy(energy, true) != energy) return;
+        if (posList == null) return;
 
-            ArrayList<TileBooster> boosters = new ArrayList<TileBooster>(6);
-            for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
-                if (d != dir) {
-                    BlockPos p = pos.advance(d);
-                    if (BlockHelper.getBlock(worldObj, p) == FunkyLocomotion.booster) {
-                        if (ForgeDirection.getOrientation(BlockHelper.getMeta(worldObj, p) % 6) != d) continue;
+        final int energy = energyCost(posList.size());
+        if (!MoveSourceHelper.canPay(energy, this.energy)) return;
 
-                        TileEntity tile = BlockHelper.getTile(worldObj, p);
-                        if (tile instanceof TileBooster) {
-                            TileBooster booster = (TileBooster) tile;
-                            if (booster.energy.extractEnergy(energy, true) != energy) return;
+        List<TileBooster> boosters = MoveSourceHelper.findBoosters(worldObj, pos, dir, energy);
+        if (boosters == null) return;
 
-                            boosters.add(booster);
-                        }
-                    }
-                }
-            }
-
-            if (!boosters.isEmpty()) {
-                for (TileBooster booster : boosters) {
-                    booster.energy.extractEnergy(energy, false);
-                }
-            }
-
-            this.energy.extractEnergy(energy, false);
-
-            MoveManager.startMoving(worldObj, posList, getDirection(), moveTime[boosters.size()]);
-        }
+        MoveSourceHelper.drain(energy, boosters, this.energy);
+        MoveManager.startMoving(worldObj, posList, getDirection(), MoveSourceHelper.moveTime(boosters.size()));
     }
 
     @Override

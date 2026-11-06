@@ -1,9 +1,9 @@
 package com.rwtema.funkylocomotion.rendering;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -12,6 +12,12 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public class FLRenderHelper {
+
+    private static final Block RENDER_BLOCK = new Block(Material.rock) {};
+
+    static {
+        RENDER_BLOCK.setBlockBounds(0, 0, 0, 1, 1, 1);
+    }
 
     public static void renderItemFace(Block b, int meta, int side, RenderBlocks renderBlocks) {
         renderItemFace(renderBlocks.getBlockIconFromSideAndMetadata(b, side, meta), side, renderBlocks);
@@ -33,25 +39,24 @@ public class FLRenderHelper {
     }
 
     public static void renderFace(int x, int y, int z, IIcon icon, int side, RenderBlocks renderBlocks) {
-        Blocks.stone.setBlockBounds(0, 0, 0, 1, 1, 1);
         switch (side) {
             case 0:
-                renderBlocks.renderFaceYNeg(Blocks.stone, x, y, z, icon);
+                renderBlocks.renderFaceYNeg(RENDER_BLOCK, x, y, z, icon);
                 break;
             case 1:
-                renderBlocks.renderFaceYPos(Blocks.stone, x, y, z, icon);
+                renderBlocks.renderFaceYPos(RENDER_BLOCK, x, y, z, icon);
                 break;
             case 2:
-                renderBlocks.renderFaceZNeg(Blocks.stone, x, y, z, icon);
+                renderBlocks.renderFaceZNeg(RENDER_BLOCK, x, y, z, icon);
                 break;
             case 3:
-                renderBlocks.renderFaceZPos(Blocks.stone, x, y, z, icon);
+                renderBlocks.renderFaceZPos(RENDER_BLOCK, x, y, z, icon);
                 break;
             case 4:
-                renderBlocks.renderFaceXNeg(Blocks.stone, x, y, z, icon);
+                renderBlocks.renderFaceXNeg(RENDER_BLOCK, x, y, z, icon);
                 break;
             case 5:
-                renderBlocks.renderFaceXPos(Blocks.stone, x, y, z, icon);
+                renderBlocks.renderFaceXPos(RENDER_BLOCK, x, y, z, icon);
                 break;
             default:
         }
@@ -60,7 +65,6 @@ public class FLRenderHelper {
 
     public static void renderBlock(Block block, int meta, RenderBlocks renderer, int renderFlag) {
         Tessellator tessellator = Tessellator.instance;
-        RenderBlocks.getInstance();
         if ((renderFlag & 1) == 0) {
             tessellator.startDrawingQuads();
             tessellator.setNormal(0.0F, -1.0F, 0.0F);

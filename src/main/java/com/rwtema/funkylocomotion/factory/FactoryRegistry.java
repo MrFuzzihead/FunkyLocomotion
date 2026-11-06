@@ -17,7 +17,6 @@ public class FactoryRegistry {
     public static final Map<Class<? extends Block>, IMoveFactory> moveFactoryMapBlockClass = new HashMap<Class<? extends Block>, IMoveFactory>();
     public static final Map<Class<?>, IMoveFactory> moveFactoryMapInheritanceClass = new HashMap<Class<?>, IMoveFactory>();
     private static final DefaultMoveFactory defaultFactory = new DefaultMoveFactory();
-    public static final ChunkUnloadFactory chunkUnloadFactory = new ChunkUnloadFactory();
 
     public static IMoveFactory getDefaultFactory() {
         return defaultFactory;
@@ -28,22 +27,25 @@ public class FactoryRegistry {
 
         if (tile instanceof IMoveFactory) return (IMoveFactory) tile;
 
-        for (Map.Entry<Class<?>, IMoveFactory> clazz : moveFactoryMapInheritanceClass.entrySet()) {
-            if (clazz.getKey()
-                .isAssignableFrom(tile.getClass())) return clazz.getValue();
+        for (Class<?> c = tile.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            IMoveFactory factory = moveFactoryMapInheritanceClass.get(c);
+            if (factory != null) return factory;
         }
 
         return null;
     }
 
     public static IMoveFactory getFactory(Block b) {
+        if (b == null) return getDefaultFactory();
         if (b instanceof IMoveFactory) return (IMoveFactory) b;
 
         IMoveFactory f = moveFactoryMapBlock.get(b);
-        if (f != null) return (f);
+        if (f != null) return f;
 
-        f = moveFactoryMapBlockClass.get(b.getClass());
-        if (f != null) return (f);
+        for (Class<?> c = b.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            f = moveFactoryMapBlockClass.get(c);
+            if (f != null) return f;
+        }
 
         return getDefaultFactory();
     }

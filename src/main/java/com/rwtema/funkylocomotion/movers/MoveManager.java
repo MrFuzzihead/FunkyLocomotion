@@ -29,6 +29,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import com.rwtema.funkylocomotion.LogHelper;
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IDescriptionProxy;
 import com.rwtema.funkylocomotion.api.IMoveFactory;
@@ -39,6 +40,8 @@ import com.rwtema.funkylocomotion.factory.FactoryRegistry;
 import com.rwtema.funkylocomotion.helper.BlockHelper;
 import com.rwtema.funkylocomotion.network.FLNetwork;
 import com.rwtema.funkylocomotion.network.MessageClearTile;
+
+import gnu.trove.map.hash.TLongObjectHashMap;
 
 public class MoveManager {
 
@@ -60,14 +63,11 @@ public class MoveManager {
         startMoving(world, world, links, dir, maxTime);
     }
 
-    final static LinkedHashMap<String, Object> vars = new LinkedHashMap<String, Object>(10, 0.2F);
-
     @SuppressWarnings("unchecked")
-    public synchronized static void startMoving(World srcWorld, World dstWorld, List<BlockLink> links,
-        ForgeDirection dir, int maxTime) {
+    public static void startMoving(World srcWorld, World dstWorld, List<BlockLink> links, ForgeDirection dir,
+        int maxTime) {
         String section = "Start";
-
-        clearVars();
+        Map<String, Object> vars = new LinkedHashMap<String, Object>(10, 0.2F);
 
         try {
             vars.put("srcWorld", srcWorld);
@@ -105,23 +105,36 @@ public class MoveManager {
                 dstBlocksToBeDestroyed.removeAll(srcBlocks);
             }
 
-            Map<BlockPos, Entry> dstTileEntries = new HashMap<BlockPos, Entry>();
+            TLongObjectHashMap<Entry> dstTileEntries = new TLongObjectHashMap<Entry>();
+            Map<BlockPos, Integer> srcLightOpacity = new HashMap<BlockPos, Integer>();
 
             vars.put("dstTileEntries", dstTileEntries);
-
-            section = "BreakBlockWithDrop";
-
-            for (BlockPos pos : dstBlocksToBeDestroyed) {
-                BlockHelper.breakBlockWithDrop(dstWorld, pos);
-            }
+            vars.put("srcLightOpacity", srcLightOpacity);
 
             Set<Chunk> srcChunks = new HashSet<Chunk>();
             HashSet<EntityPlayer> srcWatchingPlayers = new HashSet<EntityPlayer>();
+            HashSet<EntityPlayer> dstWatchingPlayers = new HashSet<EntityPlayer>();
             HashSet inventories = new HashSet();
 
             vars.put("srcChunks", srcChunks);
             vars.put("srcWatchingPlayers", srcWatchingPlayers);
+            vars.put("dstWatchingPlayers", dstWatchingPlayers);
             vars.put("inventories", inventories);
+
+            section = "BreakBlockWithDrop";
+
+            for (BlockPos pos : dstBlocksToBeDestroyed) {
+                Chunk dstChunk = BlockHelper.getChunk(dstWorld, pos);
+                if (dstChunk != null) {
+                    PlayerManager.PlayerInstance watcher = FLNetwork.getChunkWatcher(dstChunk, dstWorld);
+                    if (watcher != null) dstWatchingPlayers.addAll(watcher.playersWatchingChunk);
+                }
+
+                TileEntity dstTile = dstWorld.getTileEntity(pos.x, pos.y, pos.z);
+                if (dstTile instanceof IInventory) inventories.add(dstTile);
+
+                BlockHelper.breakBlockWithDrop(dstWorld, pos);
+            }
 
             section = "Read Data";
 
@@ -166,7 +179,10 @@ public class MoveManager {
                 NBTTagCompound descriptor = new NBTTagCompound();
 
                 descriptor.setInteger("Block", Block.getIdFromBlock(e.block));
-                if (e.meta != 0) descriptor.setByte("Meta", (byte) e.meta);
+                String blockName = Block.blockRegistry.getNameForObject(e.block);
+                if (blockName != null) descriptor.setString("BlockName", blockName);
+                descriptor.setByte("Meta", (byte) e.meta);
+                descriptor.setInteger(MoveSnapshot.VERSION_KEY, MoveSnapshot.VERSION);
 
                 TileEntity tile = srcWorld.getTileEntity(srcPos.x, srcPos.y, srcPos.z);
                 if (tile != null) {
@@ -174,7 +190,8 @@ public class MoveManager {
                     for (IDescriptionProxy d : DescriptorRegistry.getProxyList()) {
                         if (d.canHandleTile(tile)) {
                             d.addDescriptionToTags(descriptor, tile);
-                            if (!"DescID".isEmpty()) descriptor.setString("DescID", d.getID());
+                            if (!d.getID()
+                                .isEmpty()) descriptor.setString("DescID", d.getID());
                             flag = true;
                             break;
                         }
@@ -189,10 +206,11 @@ public class MoveManager {
                 }
 
                 e.description = descriptor;
+                srcLightOpacity.put(srcPos, e.lightopacity);
 
                 srcChunks.add(BlockHelper.getChunk(srcWorld, srcPos));
 
-                dstTileEntries.put(dstPos, e);
+                dstTileEntries.put(dstPos.toLong(), e);
             }
             vars.put("Iterator", BLANK);
 
@@ -210,9 +228,9 @@ public class MoveManager {
 
                         p = p.advance(dir);
 
-                        if (!dstTileEntries.containsKey(p)) continue;
+                        if (!dstTileEntries.containsKey(p.toLong())) continue;
 
-                        Entry e = dstTileEntries.get(p);
+                        Entry e = dstTileEntries.get(p.toLong());
 
                         e.scheduledTickTime = (int) (tick.scheduledTime - k);
                         e.scheduledTickPriority = tick.priority;
@@ -230,12 +248,13 @@ public class MoveManager {
             for (BlockLink link : links) {
                 vars.put("Iterator", link);
                 IMoveFactory factory = FactoryRegistry.getFactory(srcWorld, link.srcPos);
-                dstTileEntries.get(link.dstPos).blockTag = factory.destroyBlock(srcWorld, link.srcPos);
+                dstTileEntries.get(link.dstPos.toLong()).blockTag = factory.destroyBlock(srcWorld, link.srcPos);
             }
             vars.put("Iterator", BLANK);
 
             // let there be updates;
             section = "closeInventories";
+            srcWatchingPlayers.addAll(dstWatchingPlayers);
             for (EntityPlayer watchingPlayer : srcWatchingPlayers) {
                 vars.put("Iterator", watchingPlayer);
                 if (watchingPlayer.openContainer != watchingPlayer.inventoryContainer
@@ -266,7 +285,11 @@ public class MoveManager {
             section = "postUpdateBlock";
             for (BlockPos pos : srcBlocksToBecomeAir) {
                 vars.put("Iterator", pos);
-                BlockHelper.postUpdateBlock(dstWorld, pos);
+                // These positions are in the source world. For a cross-dimension
+                // teleport, posting them to dstWorld updated unrelated blocks at the
+                // same coordinates in the destination dimension.
+                Integer oldOpacity = srcLightOpacity.get(pos);
+                BlockHelper.postUpdateBlock(srcWorld, pos, oldOpacity != null ? oldOpacity : -1);
             }
             vars.put("Iterator", BLANK);
 
@@ -275,9 +298,9 @@ public class MoveManager {
             vars.put("tiles", tiles);
 
             section = "createTiles";
-            for (Entry e : dstTileEntries.values()) {
+            for (Entry e : dstTileEntries.valueCollection()) {
                 vars.put("Iterator", e);
-                dstWorld.setBlock(e.pos.x, e.pos.y, e.pos.z, BlockMoving.instance, 0, 1);
+                dstWorld.setBlock(e.pos.x, e.pos.y, e.pos.z, BlockMoving.instance, 0, 0);
                 TileMovingServer tile = (TileMovingServer) dstWorld.getTileEntity(e.pos.x, e.pos.y, e.pos.z);
                 vars.put("Iterator2", tile);
                 tile.block = e.blockTag;
@@ -303,8 +326,8 @@ public class MoveManager {
             for (BlockLink link : links) {
                 vars.put("Iterator", BLANK);
                 BlockPos srcPos = link.srcPos;
-                if (srcWorld != dstWorld || !dstTileEntries.containsKey(srcPos)) {
-                    srcWorld.setBlock(srcPos.x, srcPos.y, srcPos.z, BlockMoving.instance, 0, 1);
+                if (srcWorld != dstWorld || !dstTileEntries.containsKey(srcPos.toLong())) {
+                    srcWorld.setBlock(srcPos.x, srcPos.y, srcPos.z, BlockMoving.instance, 0, 0);
                     TileMovingServer tile = (TileMovingServer) srcWorld.getTileEntity(srcPos.x, srcPos.y, srcPos.z);
                     vars.put("Iterator2", tile);
 
@@ -323,7 +346,7 @@ public class MoveManager {
                             srcPos.y,
                             srcPos.z,
                             new MessageClearTile(srcPos));
-                        Entry e = dstTileEntries.get(link.dstPos);
+                        Entry e = dstTileEntries.get(link.dstPos.toLong());
                         tile.block = (NBTTagCompound) airBlockTag.copy();
                         if (e.description != null) tile.desc = (NBTTagCompound) e.description.copy();
                         else tile.desc = (NBTTagCompound) airDescTag.copy();
@@ -375,18 +398,18 @@ public class MoveManager {
 
             section = "DoneIfWeCrashNowThenWhatTheHell";
 
-            clearVars();
+            clearVars(vars);
         } catch (Throwable err) {
             try {
-                CrashReport crashReport = buildCrashReport(section, err);
+                CrashReport crashReport = buildCrashReport(vars, section, err);
                 throw new ReportedException(crashReport);
             } finally {
-                clearVars();
+                clearVars(vars);
             }
         }
     }
 
-    private static CrashReport buildCrashReport(String section, Throwable err) {
+    private static CrashReport buildCrashReport(Map<String, Object> vars, String section, Throwable err) {
         CrashReport crashReport = CrashReport.makeCrashReport(err, "FunkyLocomotionMoveCrash");
         CrashReportCategory moveCode = crashReport.makeCategory("MoveCode");
 
@@ -401,119 +424,186 @@ public class MoveManager {
 
     private static final Object BLANK = new Object();
 
-    private static void clearVars() {
-        for (Map.Entry<String, Object> entry : vars.entrySet()) {
-            entry.setValue(BLANK);
-        }
+    private static void clearVars(Map<String, Object> vars) {
+        vars.clear();
     }
 
     public static void finishMoving() {
-        clearVars();
         String section = "start";
+        Map<String, Object> vars = new LinkedHashMap<String, Object>(10, 0.2F);
+
+        List<TileMovingServer> tiles = MovingTileRegistry.getTilesFinishedMoving();
+        Set<TileMovingServer> failed = new HashSet<TileMovingServer>();
+        Map<BlockPos, Integer> oldOpacities = new HashMap<BlockPos, Integer>();
+
+        for (TileMovingServer tile : tiles) tile.finishing = true;
 
         try {
-            List<TileMovingServer> tiles = MovingTileRegistry.getTilesFinishedMoving();
-            HashSet<Chunk> chunks = new HashSet<Chunk>();
-
             vars.put("tiles", tiles);
-            vars.put("chunks", tiles);
 
-            // Clear Tiles
+            // Clear Tiles. Do not use setBlock(air) + setBlock(stone) here:
+            // that ran the full block-change/light path twice per tile and left a
+            // stone block in the world if the final recreation failed.
             section = "Clear Tiles";
             for (TileMovingServer tile : tiles) {
+                if (tile.isInvalid()) continue;
                 vars.put("tile", tile);
-                chunks.add(
-                    tile.getWorldObj()
-                        .getChunkFromBlockCoords(tile.xCoord, tile.zCoord));
-                tile.getWorldObj()
-                    .setBlock(tile.xCoord, tile.yCoord, tile.zCoord, Blocks.air, 0, 0);
-                tile.getWorldObj()
-                    .setBlock(tile.xCoord, tile.yCoord, tile.zCoord, Blocks.stone, 0, 0);
+                try {
+                    World world = tile.getWorldObj();
+                    if (world == null) {
+                        markFailed(tile, new IllegalStateException("tile has no world"), failed);
+                        continue;
+                    }
+
+                    BlockPos pos = new BlockPos(tile);
+                    Chunk chunk = BlockHelper.getChunk(world, pos);
+                    if (chunk == null) {
+                        markFailed(tile, new IllegalStateException("chunk is not loaded"), failed);
+                        continue;
+                    }
+
+                    oldOpacities.put(
+                        pos,
+                        BlockHelper.getBlock(world, pos)
+                            .getLightOpacity(world, pos.x, pos.y, pos.z));
+                    world.removeTileEntity(pos.x, pos.y, pos.z);
+                    BlockHelper.silentClear(chunk, pos);
+                } catch (Throwable t) {
+                    markFailed(tile, t, failed);
+                }
             }
             vars.put("tile", BLANK);
 
             // Set Block/Tile
             section = "Set Block/Tile";
             for (TileMovingServer tile : tiles) {
-                BlockPos pos = new BlockPos(tile);
+                if (failed.contains(tile)) continue;
                 vars.put("tile", tile);
-                if (tile.block != null) {
-                    BlockHelper.silentClear(BlockHelper.getChunk(tile.getWorldObj(), pos), pos);
-                    Block block = Block.getBlockFromName(tile.block.getString("Block"));
-                    vars.put("block", block);
-                    if (block == null) block = Blocks.air;
-                    IMoveFactory factory = FactoryRegistry.getFactory(block);
-                    vars.put("factory", factory);
-                    factory.recreateBlock(tile.getWorldObj(), pos, tile.block);
+                try {
+                    World world = tile.getWorldObj();
+                    BlockPos pos = new BlockPos(tile);
+                    if (tile.block != null && tile.block.hasKey("Block")) {
+                        Block block = MoveSnapshot.readBlock(tile.block);
+                        vars.put("block", block);
+                        IMoveFactory factory = FactoryRegistry.getFactory(block);
+                        vars.put("factory", factory);
+                        factory.recreateBlock(world, pos, tile.block);
+                    }
+                } catch (Throwable t) {
+                    markFailed(tile, t, failed);
                 }
             }
             vars.put("tile", BLANK);
             vars.put("block", BLANK);
             vars.put("factory", BLANK);
 
-            // Update Blocks
-            section = "Update Blocks";
+            // onBlockAdded can adjust a block and its neighbours (chest pairs
+            // are the obvious case). Re-apply the snapshotted metadata after
+            // every block has been recreated so the moved orientation wins.
+            section = "Restore Metadata";
             for (TileMovingServer tile : tiles) {
+                if (failed.contains(tile)) continue;
                 vars.put("tile", tile);
-                BlockPos pos = new BlockPos(tile);
-                BlockHelper.postUpdateBlock(tile.getWorldObj(), pos);
-                if (tile.scheduledTickTime != -1) tile.getWorldObj()
-                    .scheduleBlockUpdateWithPriority(
-                        tile.xCoord,
-                        tile.yCoord,
-                        tile.zCoord,
-                        BlockHelper.getBlock(tile.getWorldObj(), pos),
-                        tile.scheduledTickTime - tile.maxTime,
-                        tile.scheduledTickPriority);
+                try {
+                    if (tile.block == null || !tile.block.hasKey("Meta")) continue;
 
+                    World world = tile.getWorldObj();
+                    BlockPos pos = new BlockPos(tile);
+                    Chunk chunk = BlockHelper.getChunk(world, pos);
+                    BlockHelper.silentSetMeta(chunk, pos, MoveSnapshot.readMeta(tile.block));
+                } catch (Throwable t) {
+                    markFailed(tile, t, failed);
+                }
             }
             vars.put("tile", BLANK);
 
-            // Send Update Packets
-            section = "Send Update Packets";
-            for (Chunk chunk : chunks) {
-                vars.put("chunk", chunk);
-                chunk.isModified = true;
-                FLNetwork.updateChunk(chunk);
+            // Update Blocks
+            section = "Update Blocks";
+            for (TileMovingServer tile : tiles) {
+                if (failed.contains(tile)) continue;
+                vars.put("tile", tile);
+                try {
+                    World world = tile.getWorldObj();
+                    BlockPos pos = new BlockPos(tile);
+                    Integer oldOpacity = oldOpacities.get(pos);
+                    BlockHelper.postUpdateBlock(world, pos, oldOpacity != null ? oldOpacity : -1);
+                    if (tile.scheduledTickTime != -1) world.scheduleBlockUpdateWithPriority(
+                        tile.xCoord,
+                        tile.yCoord,
+                        tile.zCoord,
+                        BlockHelper.getBlock(world, pos),
+                        tile.scheduledTickTime - tile.maxTime,
+                        tile.scheduledTickPriority);
+                } catch (Throwable t) {
+                    markFailed(tile, t, failed);
+                }
             }
-            vars.put("chunk", BLANK);
+            vars.put("tile", BLANK);
 
             // Redo cached Activation
             section = "Redo Activation";
             for (TileMovingServer tile : tiles) {
+                if (failed.contains(tile)) continue;
                 vars.put("tile", tile);
-                if (tile.activatingPlayer != null) {
-                    EntityPlayer player = tile.activatingPlayer.get();
-                    if (player != null) {
-                        Block b = BlockHelper.getBlock(tile.getWorldObj(), new BlockPos(tile));
-                        b.onBlockActivated(
-                            tile.getWorldObj(),
-                            tile.xCoord,
-                            tile.yCoord,
-                            tile.zCoord,
-                            player,
-                            tile.activatingSide,
-                            tile.activatingHitX,
-                            tile.activatingHitY,
-                            tile.activatingHitZ);
+                try {
+                    if (tile.activatingPlayer != null) {
+                        EntityPlayer player = tile.activatingPlayer.get();
+                        if (player != null && player.worldObj == tile.getWorldObj()) {
+                            Block b = BlockHelper.getBlock(tile.getWorldObj(), new BlockPos(tile));
+                            b.onBlockActivated(
+                                tile.getWorldObj(),
+                                tile.xCoord,
+                                tile.yCoord,
+                                tile.zCoord,
+                                player,
+                                tile.activatingSide,
+                                tile.activatingHitX,
+                                tile.activatingHitY,
+                                tile.activatingHitZ);
+                        }
                     }
+                } catch (Throwable t) {
+                    markFailed(tile, t, failed);
                 }
             }
             vars.put("tile", BLANK);
 
             section = "Fin";
-            clearVars();
         } catch (Throwable err) {
             try {
-                CrashReport crashReport = buildCrashReport(section, err);
+                CrashReport crashReport = buildCrashReport(vars, section, err);
                 throw new ReportedException(crashReport);
             } finally {
-                clearVars();
+                clearVars(vars);
             }
+        } finally {
+            for (TileMovingServer tile : tiles) {
+                if (!tile.isInvalid()) tile.finishing = false;
+            }
+            clearVars(vars);
         }
     }
 
+    private static void markFailed(TileMovingServer tile, Throwable t, Set<TileMovingServer> failed) {
+        failed.add(tile);
+        LogHelper.errorThrowable(
+            "Unable to finish moving tile at (" + tile.xCoord + "," + tile.yCoord + "," + tile.zCoord + ")",
+            t);
+        tile.invalidate();
+        MovingTileRegistry.deregister(tile);
+    }
+
     private static String makeString(Object o, int n) {
+        try {
+            return makeStringUnsafe(o, n);
+        } catch (Throwable t) {
+            return o == null ? "null"
+                : o.getClass()
+                    .getName() + "{...}";
+        }
+    }
+
+    private static String makeStringUnsafe(Object o, int n) {
         if (o == null) return "null";
         if (o instanceof String) return (String) o;
 

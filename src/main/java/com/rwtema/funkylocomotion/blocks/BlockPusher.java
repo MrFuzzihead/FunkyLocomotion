@@ -6,6 +6,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -89,6 +90,14 @@ public class BlockPusher extends Block implements ISlipperyBlock {
     public boolean canStickTo(World world, BlockPos pos, ForgeDirection dir) {
         return dir != ForgeDirection.UNKNOWN && (world.getBlockMetadata(pos.x, pos.y, pos.z) % 6) != dir.getOpposite()
             .ordinal();
+    }
+
+    @Override
+    public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase entity, ItemStack item) {
+        TileEntity tile = world.getTileEntity(x, y, z);
+        if (tile instanceof TilePusher) {
+            ((TilePusher) tile).setOwner(entity);
+        }
     }
 
     @Override

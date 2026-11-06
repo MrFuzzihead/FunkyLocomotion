@@ -13,11 +13,15 @@ import net.minecraftforge.common.util.ForgeDirection;
 import com.rwtema.funkylocomotion.api.BlockPos;
 import com.rwtema.funkylocomotion.api.IMoveCheck;
 import com.rwtema.funkylocomotion.api.ISlipperyBlock;
-import com.rwtema.funkylocomotion.movepermissions.MoveCheckReflector;
+import com.rwtema.funkylocomotion.movepermissions.MoveBlacklist;
+import com.rwtema.funkylocomotion.movepermissions.MoveCheckRegistry;
 
 public class BlockHelper {
 
     public static boolean silentSetBlock(Chunk chunk, BlockPos pos, Block block, int meta) {
+        if (chunk == null || pos == null || block == null) return false;
+        if (pos.y < 0 || pos.y > 255) return false;
+
         int dx = pos.x & 15;
         int dz = pos.z & 15;
         int y = pos.y;
@@ -50,9 +54,36 @@ public class BlockHelper {
             extendedblockstorage.setExtBlockMetadata(dx, y & 15, dz, meta);
 
             chunk.isModified = true;
+            if (block != Blocks.air && chunk.worldObj != null) {
+                block.onBlockAdded(chunk.worldObj, pos.x, pos.y, pos.z);
+
+                // onBlockAdded is allowed to choose a default facing (furnace,
+                // chest, dispenser, ...). The original metadata is the source
+                // of truth for a moved block, so put it back after the hook.
+                if (chunk.getBlock(dx, y, dz) == block && chunk.getBlockMetadata(dx, y, dz) != meta) {
+                    extendedblockstorage.setExtBlockMetadata(dx, y & 15, dz, meta);
+                }
+            }
             return true;
         }
 
+    }
+
+    public static boolean silentSetMeta(Chunk chunk, BlockPos pos, int meta) {
+        if (chunk == null || pos == null || pos.y < 0 || pos.y > 255) return false;
+
+        ExtendedBlockStorage storage = chunk.getBlockStorageArray()[pos.y >> 4];
+        if (storage == null) return false;
+
+        int dx = pos.x & 15;
+        int dz = pos.z & 15;
+        int y = pos.y & 15;
+
+        if (storage.getExtBlockMetadata(dx, y, dz) == meta) return false;
+
+        storage.setExtBlockMetadata(dx, y, dz, meta);
+        chunk.isModified = true;
+        return true;
     }
 
     public static void silentClear(Chunk chunk, BlockPos pos) {
@@ -60,9 +91,25 @@ public class BlockHelper {
     }
 
     public static void postUpdateBlock(World world, BlockPos pos) {
+        postUpdateBlock(world, pos, -1);
+    }
+
+    /**
+     * Notifies the world after a direct block write.
+     *
+     * @param oldLightOpacity the light opacity of the block that was replaced, or
+     *                        {@code -1} when unknown. Passing 255 here (the old
+     *                        behaviour) makes almost every placement look like an
+     *                        opaque-to-transparent transition and forces a full
+     *                        skylight recomputation for the column.
+     */
+    public static void postUpdateBlock(World world, BlockPos pos, int oldLightOpacity) {
+        if (world == null || !world.blockExists(pos.x, pos.y, pos.z)) return;
+
         int i1 = (pos.z & 15) << 4 | (pos.x & 15);
 
         Chunk chunk = getChunk(world, pos);
+        if (chunk == null) return;
 
         if (pos.y >= chunk.precipitationHeightMap[i1] - 1) {
             chunk.precipitationHeightMap[i1] = -999;
@@ -71,7 +118,6 @@ public class BlockHelper {
         int j1 = chunk.heightMap[i1];
         boolean flag = pos.y >= j1;
         Block newBlock = chunk.getBlock(pos.x & 15, pos.y, pos.z & 15);
-        int k2 = 255;
 
         if (flag) {
             chunk.generateSkylightMap();
@@ -87,8 +133,10 @@ public class BlockHelper {
                 chunk.relightBlock(pos.x & 15, pos.y, pos.z & 15);
             }
 
-            if (j2 != k2 && (j2 < k2 || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0
-                || chunk.getSavedLightValue(EnumSkyBlock.Block, pos.x & 15, pos.y, pos.z & 15) > 0)) {
+            if (oldLightOpacity >= 0 && j2 != oldLightOpacity
+                && (j2 < oldLightOpacity
+                    || chunk.getSavedLightValue(EnumSkyBlock.Sky, pos.x & 15, pos.y, pos.z & 15) > 0
+                    || chunk.getSavedLightValue(EnumSkyBlock.Block, pos.x & 15, pos.y, pos.z & 15) > 0)) {
                 chunk.propagateSkylightOcclusion(pos.x & 15, pos.z & 15);
             }
         }
@@ -121,30 +169,33 @@ public class BlockHelper {
         Block b = getBlock(world, pos);
         if (b == Blocks.air || b.isAir(world, pos.x, pos.y, pos.z)) return false;
 
+        if (MoveBlacklist.isBlacklisted(world, pos, b)) return false;
+
         if (b instanceof IMoveCheck) return ((IMoveCheck) b).canMove(world, pos.x, pos.y, pos.z);
 
         if (b.getBlockHardness(world, pos.x, pos.y, pos.z) < 0) return false;
 
         TileEntity tile = world.getTileEntity(pos.x, pos.y, pos.z);
 
-        if (tile != null) {
-            if (tile instanceof IMoveCheck) return ((IMoveCheck) tile).canMove(world, pos.x, pos.y, pos.z);
-            else if (!MoveCheckReflector.canMoveClass(tile.getClass())) return false;
-        }
+        if (tile instanceof IMoveCheck) return ((IMoveCheck) tile).canMove(world, pos.x, pos.y, pos.z);
 
-        return MoveCheckReflector.canMoveClass(b.getClass());
+        return !MoveCheckRegistry.preventMovement(world, pos.x, pos.y, pos.z, b, getMeta(world, pos), tile);
     }
 
     public static void breakBlockWithDrop(World world, BlockPos pos) {
+        if (world == null || world.isRemote) return;
+
         Block block = getBlock(world, pos);
+        if (block == null || block.getMaterial() == Material.air) return;
 
-        if (block.getMaterial() != Material.air) {
-            int l = world.getBlockMetadata(pos.x, pos.y, pos.z);
-            world.playAuxSFX(2001, pos.x, pos.y, pos.z, Block.getIdFromBlock(block) + (l << 12));
-            block.dropBlockAsItem(world, pos.x, pos.y, pos.z, l, 0);
-        }
+        int meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
+        world.playAuxSFX(2001, pos.x, pos.y, pos.z, Block.getIdFromBlock(block) + (meta << 12));
+        block.onBlockDestroyedByPlayer(world, pos.x, pos.y, pos.z, meta);
+        block.dropBlockAsItem(world, pos.x, pos.y, pos.z, meta, 0);
 
-        world.setBlock(pos.x, pos.y, pos.z, Blocks.air, 0, 2);
+        world.removeTileEntity(pos.x, pos.y, pos.z);
+        // Flag 3: notify neighbours and send the block change to clients.
+        world.setBlock(pos.x, pos.y, pos.z, Blocks.air, 0, 3);
     }
 
     public static boolean isValid(World world, BlockPos pos) {

@@ -44,6 +44,11 @@ public final class BlockStickyFrame extends BlockFrame {
         return ((index + meta) & (1 << side)) != 0 ? filled : blockIcon;
     }
 
+    /** True when the given side uses the solid (closed) icon. */
+    public boolean isSideClosed(int side, int meta) {
+        return ((index + meta) & (1 << side)) != 0;
+    }
+
     @Override
     public void registerBlockIcons(IIconRegister register) {
         filled = register.registerIcon("funkylocomotion:frame_closed");
@@ -53,7 +58,9 @@ public final class BlockStickyFrame extends BlockFrame {
     @Override
     @SuppressWarnings("unchecked")
     public void getSubBlocks(Item item, CreativeTabs tab, List list) {
-        list.add(new ItemStack(item, 1, 0));
+        for (int meta = 0; meta < 16; meta++) {
+            list.add(new ItemStack(item, 1, meta));
+        }
     }
 
     @Override
@@ -62,9 +69,11 @@ public final class BlockStickyFrame extends BlockFrame {
         ItemStack item = player.getHeldItem();
         if (!(ItemHelper.isWrench(item))) return false;
 
-        int i = (index + world.getBlockMetadata(x, y, z)) ^ (1 << side);
+        // The server owns the block change. Mutating the client world here makes
+        // the change flicker and fires client-side World.setBlock events.
+        if (world.isRemote) return true;
 
-        if (i > 63 || i < 0) i = 0;
+        int i = (index + world.getBlockMetadata(x, y, z)) ^ (1 << side);
 
         int meta = i % 16;
         Block block = blocks[(i - meta) / 16];

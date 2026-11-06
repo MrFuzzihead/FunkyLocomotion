@@ -19,7 +19,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
 
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -43,6 +42,14 @@ public class BlockMoving extends Block {
         instance = this;
     }
 
+    public static boolean _Immovable() {
+        return true;
+    }
+
+    /**
+     * @deprecated Typo kept for binary compatibility. Use {@link #_Immovable()}.
+     */
+    @Deprecated
     public static boolean _Immoveable() {
         return true;
     }
@@ -58,6 +65,8 @@ public class BlockMoving extends Block {
             if (axis.intersectsWith(bb)) list.add(bb);
 
         ForgeDirection d = ForgeDirection.getOrientation(((TileMovingBase) tile).dir);
+        if (d == ForgeDirection.UNKNOWN) return;
+
         TileEntity tile2 = world.getTileEntity(x + d.offsetX, y + d.offsetY, z + d.offsetZ);
         if (!(tile2 instanceof TileMovingBase)) return;
 
@@ -87,9 +96,17 @@ public class BlockMoving extends Block {
 
     @Override
     public TileEntity createTileEntity(World world, int metadata) {
-        if (world.isRemote || FMLCommonHandler.instance()
-            .getEffectiveSide() == Side.CLIENT) return new TileMovingClient();
-        else return new TileMovingServer();
+        return createTileEntity(world.isRemote);
+    }
+
+    /**
+     * The logical side is a property of the world, not of the thread that happens
+     * to create the tile entity. FMLCommonHandler.getEffectiveSide() is thread-name
+     * based and returns CLIENT for any server-side thread not literally named
+     * "Server thread", which would create a client tile entity in a WorldServer.
+     */
+    static TileEntity createTileEntity(boolean remote) {
+        return remote ? new TileMovingClient() : new TileMovingServer();
     }
 
     @Override
@@ -157,11 +174,19 @@ public class BlockMoving extends Block {
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile instanceof TileMovingClient) {
             TileMovingClient mover = (TileMovingClient) tile;
+            if (mover.block == null || mover.block == net.minecraft.init.Blocks.air) return;
+
             FakeWorldClient fakeWorld = FakeWorldClient.getFakeWorldWrapper(world);
-            fakeWorld.offset = mover.offset(true);
-            fakeWorld.dir = ForgeDirection.getOrientation(mover.dir);
-            mover.block.randomDisplayTick(fakeWorld, mover.xCoord, mover.yCoord, mover.zCoord, rand);
-            fakeWorld.offset = 0;
+            double previousOffset = fakeWorld.offset;
+            ForgeDirection previousDir = fakeWorld.dir;
+            try {
+                fakeWorld.offset = mover.offset(true);
+                fakeWorld.dir = ForgeDirection.getOrientation(mover.dir);
+                mover.block.randomDisplayTick(fakeWorld, mover.xCoord, mover.yCoord, mover.zCoord, rand);
+            } finally {
+                fakeWorld.offset = previousOffset;
+                fakeWorld.dir = previousDir;
+            }
         }
     }
 

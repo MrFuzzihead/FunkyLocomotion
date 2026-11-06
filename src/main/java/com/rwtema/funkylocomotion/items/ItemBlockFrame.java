@@ -30,9 +30,10 @@ public class ItemBlockFrame extends ItemBlockMetadata {
 
         StringBuilder builder = new StringBuilder(super.getItemStackDisplayName(itemstack));
 
-        builder.append(" (");
-
         int meta = itemstack.getItemDamage() + index;
+        if ((meta & 0x3F) == 0) return builder.toString();
+
+        builder.append(" (");
         for (int i = 0; i < 6; i++) if (((meta) & (1 << i)) != 0)
             builder.append(StatCollector.translateToLocal("frame.dir.abbreviations." + i));
 
@@ -45,7 +46,7 @@ public class ItemBlockFrame extends ItemBlockMetadata {
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack item, EntityPlayer player, List list, boolean debug) {
         super.addInformation(item, player, list, debug);
-        if (index == 0 && item.getItemDamage() == 0) return;
+        if (((index + item.getItemDamage()) & 0x3F) == 0) return;
         list.add(StatCollector.translateToLocal("frame.dir.start"));
         StringBuilder s = new StringBuilder();
         boolean flag = false;

@@ -15,12 +15,16 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Facing;
 import net.minecraft.world.World;
 import net.minecraftforge.client.MinecraftForgeClient;
+import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
 import com.rwtema.funkylocomotion.blocks.BlockMoving;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 import com.rwtema.funkylocomotion.fakes.FakeWorldClient;
+
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
@@ -44,59 +48,64 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             return;
         }
 
-        this.bindTexture(TextureMap.locationBlocksTexture);
-        boolean flag = false;
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        try {
+            this.bindTexture(TextureMap.locationBlocksTexture);
+            boolean flag = false;
 
-        Tessellator tessellator = Tessellator.instance;
+            Tessellator tessellator = Tessellator.instance;
 
-        int pass = MinecraftForgeClient.getRenderPass();
-        if (mover.render && mover.block.canRenderInPass(pass)
-            && mover.block.getRenderType() >= 0
-            && (renderBlocks != null || createCache())) {
-            GL11.glPushMatrix();
+            int pass = MinecraftForgeClient.getRenderPass();
+            if (mover.render && mover.block.canRenderInPass(pass)
+                && mover.block.getRenderType() >= 0
+                && (renderBlocks != null || createCache())) {
+                GL11.glPushMatrix();
 
-            setupTranslations(x, y, z, mover, h, dir);
+                setupTranslations(x, y, z, mover, h, dir);
 
-            flag = renderStatic(mover, pass);
+                flag = renderStatic(mover, pass);
 
-            GL11.glPopMatrix();
-            GL11.glEnable(GL11.GL_CULL_FACE);
-        }
-
-        flag = flag | renderDynamic(x, y, z, f, mover, h, dir, pass);
-
-        if (pass == 0) {
-            mover.failedToRenderInFirstPass = !flag;
-        } else if (!flag && mover.failedToRenderInFirstPass) {
-            GL11.glPushMatrix();
-
-            setupTranslations(x, y, z, mover, h, dir);
-
-            RenderHelper.disableStandardItemLighting();
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            GL11.glEnable(GL11.GL_BLEND);
-
-            if (Minecraft.isAmbientOcclusionEnabled()) {
-                GL11.glShadeModel(GL11.GL_SMOOTH);
-            } else {
-                GL11.glShadeModel(GL11.GL_FLAT);
+                GL11.glPopMatrix();
+                GL11.glEnable(GL11.GL_CULL_FACE);
             }
 
-            tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
-            tessellator.startDrawingQuads();
-            renderBlocks.setOverrideBlockTexture(mover.error ? BlockMoving.crate_error : BlockMoving.crate);
-            renderBlocks.renderBlockByRenderType(Blocks.stone, mover.xCoord, mover.yCoord, mover.zCoord);
-            renderBlocks.clearOverrideBlockTexture();
+            flag = flag | renderDynamic(x, y, z, f, mover, h, dir, pass);
 
-            mover.cachedState[0] = leadVertexState();
-            mover.skipPass[0] = false;
-            mover.cachedState[1] = null;
-            mover.skipPass[1] = true;
+            if (pass == 0) {
+                mover.failedToRenderInFirstPass = !flag;
+            } else if (!flag && mover.failedToRenderInFirstPass) {
+                GL11.glPushMatrix();
 
-            tessellator.draw();
-            GL11.glPopMatrix();
+                setupTranslations(x, y, z, mover, h, dir);
 
-            RenderHelper.enableStandardItemLighting();
+                RenderHelper.disableStandardItemLighting();
+                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                GL11.glEnable(GL11.GL_BLEND);
+
+                if (Minecraft.isAmbientOcclusionEnabled()) {
+                    GL11.glShadeModel(GL11.GL_SMOOTH);
+                } else {
+                    GL11.glShadeModel(GL11.GL_FLAT);
+                }
+
+                tessellator.setColorOpaque_F(1.0F, 1.0F, 1.0F);
+                tessellator.startDrawingQuads();
+                renderBlocks.setOverrideBlockTexture(mover.error ? BlockMoving.crate_error : BlockMoving.crate);
+                renderBlocks.renderBlockByRenderType(Blocks.stone, mover.xCoord, mover.yCoord, mover.zCoord);
+                renderBlocks.clearOverrideBlockTexture();
+
+                mover.cachedState[0] = leadVertexState();
+                mover.skipPass[0] = false;
+                mover.cachedState[1] = null;
+                mover.skipPass[1] = true;
+
+                tessellator.draw();
+                GL11.glPopMatrix();
+
+                RenderHelper.enableStandardItemLighting();
+            }
+        } finally {
+            GL11.glPopAttrib();
         }
     }
 
@@ -120,7 +129,7 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
     protected boolean renderDynamic(double x, double y, double z, float f, TileMovingClient mover, double h, int dir,
         int pass) {
-        if (mover.tile == null || !mover.tile.shouldRenderInPass(pass)) return false;
+        if (!mover.render || mover.tile == null || !mover.tile.shouldRenderInPass(pass)) return false;
 
         if (fakeWorldClient == null && !createCache()) return false;
 
@@ -144,7 +153,7 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                 Minecraft.getMinecraft().thePlayer.worldObj = prevWorld2;
             }
             specialRenderer.func_147496_a(world);
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
             FLRenderHelper.clearTessellator();
 
             (new RuntimeException(
@@ -172,7 +181,27 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
         return true;
     }
 
+    /**
+     * Drops cached geometry when anything it depends on changed. Block data,
+     * neighbouring movers and icon UVs all contribute to the cached vertex
+     * state, so a cache built for one arrangement must never be reused for
+     * another.
+     */
+    static void refreshCachedGeometry(TileMovingClient mover) {
+        int revision = MoverRenderState.revision();
+        if (mover.renderCacheGeneration == revision) return;
+
+        mover.cachedState[0] = null;
+        mover.cachedState[1] = null;
+        mover.skipPass[0] = false;
+        mover.skipPass[1] = false;
+        mover.failedToRenderInFirstPass = false;
+        mover.renderCacheGeneration = revision;
+    }
+
     protected boolean renderStatic(TileMovingClient mover, int pass) {
+        refreshCachedGeometry(mover);
+
         if (mover.skipPass[pass]) return true;
 
         RenderHelper.disableStandardItemLighting();
@@ -182,7 +211,25 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         }
 
-        GL11.glEnable(GL11.GL_CULL_FACE);
+        // Frame and glass are non-opaque. Culling their back faces makes the
+        // structure look hollow when the camera crosses into or looks through
+        // it. Opaque blocks keep normal back-face culling.
+        if (mover.block.isOpaqueCube()) {
+            GL11.glEnable(GL11.GL_CULL_FACE);
+        } else {
+            GL11.glDisable(GL11.GL_CULL_FACE);
+        }
+
+        // A mover can be flush with a static block (or with another mover of a
+        // different type). Nudge the depth of the moving geometry so a coplanar
+        // face cannot flicker against the other one. Non-opaque movers win the
+        // tie (they are drawn from both sides); opaque movers lose it.
+        GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+        if (mover.block.isOpaqueCube()) {
+            GL11.glPolygonOffset(1.0F, 1.0F);
+        } else {
+            GL11.glPolygonOffset(-1.0F, -1.0F);
+        }
 
         if (Minecraft.isAmbientOcclusionEnabled()) {
             GL11.glShadeModel(GL11.GL_SMOOTH);
@@ -204,15 +251,31 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
             mover.cachedState[pass] = null;
             mover.skipPass[pass] = true;
 
-            try {
-                if (renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord)) {
-                    if (tessellator.rawBufferIndex > 0) {
-                        mover.cachedState[pass] = leadVertexState();
-                        mover.skipPass[pass] = false;
-                    }
-                }
+            boolean rendered = false;
+            boolean failed = false;
 
-            } catch (Exception e) {
+            // The mover owns its coordinates: its tile entity may already have
+            // been replaced (finished ghost) or a new mover may be there.
+            int previousX = fakeWorldClient.renderX;
+            int previousY = fakeWorldClient.renderY;
+            int previousZ = fakeWorldClient.renderZ;
+            Block previousRenderBlock = fakeWorldClient.renderBlock;
+            int previousRenderMeta = fakeWorldClient.renderMeta;
+            ForgeDirection previousDir = fakeWorldClient.movingDir;
+            boolean previousInFlight = fakeWorldClient.inFlight;
+
+            fakeWorldClient.renderX = mover.xCoord;
+            fakeWorldClient.renderY = mover.yCoord;
+            fakeWorldClient.renderZ = mover.zCoord;
+            fakeWorldClient.renderBlock = mover.block;
+            fakeWorldClient.renderMeta = mover.meta;
+            fakeWorldClient.movingDir = mover.dir >= 0 && mover.dir < 6 ? ForgeDirection.getOrientation(mover.dir)
+                : ForgeDirection.UNKNOWN;
+            fakeWorldClient.inFlight = mover.offset(false) != 0;
+            try {
+                rendered = renderBlocks.renderBlockByRenderType(mover.block, mover.xCoord, mover.yCoord, mover.zCoord);
+            } catch (Exception | LinkageError e) {
+                failed = true;
                 (new RuntimeException(
                     "Unable to render block " + Block.blockRegistry.getNameForObject(mover.block)
                         + " with meta "
@@ -221,6 +284,7 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
                         + mover.xCoord
                         + ","
                         + mover.yCoord
+                        + ","
                         + mover.zCoord
                         + "). Disabling Rendering.",
                     e)).printStackTrace();
@@ -232,12 +296,42 @@ public class TileEntityRenderMoving extends TileEntitySpecialRenderer {
 
                 mover.cachedState[pass] = null;
                 mover.skipPass[pass] = true;
+            } finally {
+                fakeWorldClient.renderX = previousX;
+                fakeWorldClient.renderY = previousY;
+                fakeWorldClient.renderZ = previousZ;
+                fakeWorldClient.renderBlock = previousRenderBlock;
+                fakeWorldClient.renderMeta = previousRenderMeta;
+                fakeWorldClient.movingDir = previousDir;
+                fakeWorldClient.inFlight = previousInFlight;
+            }
+
+            MoverRenderResult result = MoverRenderResult.classify(failed, rendered, tessellator.rawBufferIndex);
+            if (result == MoverRenderResult.CACHE) {
+                mover.cachedState[pass] = leadVertexState();
+                mover.skipPass[pass] = false;
+            } else if (result == MoverRenderResult.FAILED || result == MoverRenderResult.SKIP) {
+                mover.cachedState[pass] = null;
+                mover.skipPass[pass] = true;
+            } else {
+                // The renderer was not ready (for example an ISBRH that returns
+                // false until its data is available). Do not blacklist the pass.
+                mover.cachedState[pass] = null;
+                mover.skipPass[pass] = false;
             }
 
             tessellator.draw();
         }
+        GL11.glPolygonOffset(0.0F, 0.0F);
+        GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
         RenderHelper.enableStandardItemLighting();
         return true;
+    }
+
+    @SubscribeEvent
+    public void onTextureStitch(TextureStitchEvent.Post event) {
+        // Block icons/UVs changed; drop every mover's cached vertex state.
+        MoverRenderState.markDirty();
     }
 
     private static TesselatorVertexState leadVertexState() {

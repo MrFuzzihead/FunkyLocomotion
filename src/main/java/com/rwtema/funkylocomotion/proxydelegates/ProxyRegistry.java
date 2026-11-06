@@ -1,20 +1,26 @@
 package com.rwtema.funkylocomotion.proxydelegates;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class ProxyRegistry {
 
-    public static final HashMap<Class<?>, HashMap<Object, Object>> proxies = new HashMap<Class<?>, HashMap<Object, Object>>();
+    public static final Map<Class<?>, Map<Object, Object>> proxies = new HashMap<Class<?>, Map<Object, Object>>();
 
     public static <T> T register(Object a, T proxy, Class<? extends T> iface) {
-        assert (proxy != null);
-        assert (a != null);
-        assert (iface.isAssignableFrom(proxy.getClass()));
+        if (a == null) throw new IllegalArgumentException("proxy key must not be null");
+        if (proxy == null) throw new IllegalArgumentException("proxy must not be null");
+        if (iface == null) throw new IllegalArgumentException("proxy interface must not be null");
+        if (!iface.isAssignableFrom(proxy.getClass())) {
+            throw new IllegalArgumentException(
+                proxy.getClass()
+                    .getName() + " does not implement "
+                    + iface.getName());
+        }
 
         if (iface.isAssignableFrom(a.getClass())) return iface.cast(a);
 
-        HashMap<Object, Object> h = proxies.computeIfAbsent(iface, k -> new HashMap<Object, Object>());
-
+        Map<Object, Object> h = proxies.computeIfAbsent(iface, k -> new HashMap<Object, Object>());
         h.put(a, iface.cast(proxy));
 
         return iface.cast(proxy);
@@ -22,15 +28,14 @@ public class ProxyRegistry {
 
     @SuppressWarnings("unchecked")
     public static <T> T getInterface(Object a, Class<? extends T> iface) {
-        if (a == null) return null;
+        if (a == null || iface == null) return null;
 
         Class<?> aClass = a.getClass();
         if (iface.isAssignableFrom(aClass)) {
             return (T) a;
         }
 
-        HashMap<Object, Object> h = proxies.get(iface);
-
+        Map<Object, Object> h = proxies.get(iface);
         if (h == null) return null;
 
         Object obj = h.get(a);
@@ -38,18 +43,21 @@ public class ProxyRegistry {
             if (h.containsKey(aClass)) {
                 obj = h.get(aClass);
             } else {
-                for (Class<?> interfaces : aClass.getInterfaces()) {
-                    obj = h.get(interfaces);
-                    if (obj != null) {
-                        h.put(aClass, obj);
-                        break;
+                // Walk superclasses as well as directly implemented interfaces.
+                for (Class<?> c = aClass; c != null && c != Object.class; c = c.getSuperclass()) {
+                    obj = h.get(c);
+                    if (obj != null) break;
+
+                    for (Class<?> iface2 : c.getInterfaces()) {
+                        obj = h.get(iface2);
+                        if (obj != null) break;
                     }
+                    if (obj != null) break;
                 }
                 if (obj == null) h.put(aClass, null);
             }
         }
 
-        if (obj == null) return null;
-        else return (T) obj;
+        return (T) obj;
     }
 }

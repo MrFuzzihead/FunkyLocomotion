@@ -1,6 +1,7 @@
 package com.rwtema.funkylocomotion.fakes;
 
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -20,11 +21,11 @@ import net.minecraft.world.WorldSettings;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
-import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.WorldEvent;
 
+import com.rwtema.funkylocomotion.blocks.BlockFrame;
 import com.rwtema.funkylocomotion.blocks.TileMovingClient;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -34,9 +35,19 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class FakeWorldClient extends WorldClient {
 
-    private static final HashMap<World, FakeWorldClient> cache = new HashMap<World, FakeWorldClient>();
+    private static final Map<World, FakeWorldClient> cache = new ConcurrentHashMap<World, FakeWorldClient>();
     public double offset = 0;
     public ForgeDirection dir = ForgeDirection.UNKNOWN;
+    public int renderX, renderY, renderZ;
+    /**
+     * Block currently being drawn by the mover renderer. The mover owns its
+     * coordinates: its tile entity may no longer be in the chunk map (finished
+     * mover ghost) or a new move may already have replaced it with BlockMoving.
+     */
+    public Block renderBlock = null;
+    public int renderMeta = 0;
+    public ForgeDirection movingDir = ForgeDirection.UNKNOWN;
+    public boolean inFlight = false;
     final World world;
     final WorldClient worldClient;
 
@@ -52,18 +63,30 @@ public class FakeWorldClient extends WorldClient {
     }
 
     public static boolean isValid(World world) {
-        return world != null && world.provider != null
-            && DimensionManager.isDimensionRegistered(world.provider.dimensionId);
+        return world != null && world.provider != null;
     }
 
     public static FakeWorldClient getFakeWorldWrapper(World world) {
         FakeWorldClient fakeWorldClient = cache.get(world);
         if (fakeWorldClient == null) {
-            fakeWorldClient = new FakeWorldClient(world);
-            cache.put(world, fakeWorldClient);
+            // Construction fires WorldEvent.Load and allocates a WorldClient, so
+            // avoid creating duplicate wrappers when the first render and a packet
+            // arrive concurrently. This should still only be called from the
+            // client/render thread, but the cache itself must not corrupt.
+            synchronized (cache) {
+                fakeWorldClient = cache.get(world);
+                if (fakeWorldClient == null) {
+                    fakeWorldClient = new FakeWorldClient(world);
+                    cache.put(world, fakeWorldClient);
+                }
+            }
         }
 
         return fakeWorldClient;
+    }
+
+    public static void clear() {
+        cache.clear();
     }
 
     public static void register() {
@@ -108,16 +131,44 @@ public class FakeWorldClient extends WorldClient {
 
     @Override
     public Block getBlock(int x, int y, int z) {
+        // The mover being drawn owns its coordinates. The tile entity may no
+        // longer be in the chunk map (finished-mover ghost) and a new move may
+        // already have put a different mover there, so never trust the world for
+        // the block at the render position.
+        if (isRenderPosition(x, y, z)) return renderBlock;
+
         TileMovingClient tile = getTile(x, y, z);
         if (tile != null) return tile.block;
 
-        return Blocks.air;
+        return world.getBlock(x, y, z);
+    }
+
+    private boolean isRenderPosition(int x, int y, int z) {
+        return renderBlock != null && x == renderX && y == renderY && z == renderZ;
+    }
+
+    /**
+     * A static block that the mover has separated from along the move axis. Its
+     * face would be culled at the destination, but during the animation the
+     * mover is not touching it, so the face should be drawn.
+     */
+    public boolean ignoresStaticAlongMoveAxis(int x, int y, int z) {
+        if (!inFlight || movingDir == null || movingDir == ForgeDirection.UNKNOWN) return false;
+        if (getTile(x, y, z) != null) return false;
+
+        ForgeDirection dir = movingDir;
+        boolean along = (dir.offsetX != 0 && x != renderX) || (dir.offsetY != 0 && y != renderY)
+            || (dir.offsetZ != 0 && z != renderZ);
+        if (!along) return false;
+
+        Block block = world.getBlock(x, y, z);
+        return block.isOpaqueCube() || block instanceof BlockFrame;
     }
 
     @Override
     public TileEntity getTileEntity(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile == null ? null : tile.tile;
+        return tile == null ? world.getTileEntity(x, y, z) : tile.tile;
     }
 
     @Override
@@ -137,9 +188,21 @@ public class FakeWorldClient extends WorldClient {
     }
 
     @Override
+    public int getBlockLightValue(int x, int y, int z) {
+        return world.getBlockLightValue(x, y, z);
+    }
+
+    @Override
+    public int getSavedLightValue(EnumSkyBlock type, int x, int y, int z) {
+        return world.getSavedLightValue(type, x, y, z);
+    }
+
+    @Override
     public int getBlockMetadata(int x, int y, int z) {
+        if (isRenderPosition(x, y, z)) return renderMeta;
+
         TileMovingClient tile = getTile(x, y, z);
-        return tile == null ? 0 : tile.meta;
+        return tile == null ? world.getBlockMetadata(x, y, z) : tile.meta;
     }
 
     @Override
@@ -150,7 +213,7 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public boolean isAirBlock(int x, int y, int z) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile == null || tile.block == Blocks.air;
+        return tile == null ? world.isAirBlock(x, y, z) : tile.block == Blocks.air;
     }
 
     @Override
@@ -174,7 +237,7 @@ public class FakeWorldClient extends WorldClient {
     @Override
     public boolean isSideSolid(int x, int y, int z, ForgeDirection side, boolean _default) {
         TileMovingClient tile = getTile(x, y, z);
-        return tile != null && tile.block.isSideSolid(this, x, y, z, side);
+        return tile == null ? world.isSideSolid(x, y, z, side, _default) : tile.block.isSideSolid(this, x, y, z, side);
     }
 
     @Override
@@ -261,10 +324,11 @@ public class FakeWorldClient extends WorldClient {
         @SubscribeEvent
         public void onDimensionUnload(WorldEvent.Unload event) {
             cache.remove(event.world);
+            TileMovingClient.clearCachedTiles(event.world);
 
             MinecraftServer server = MinecraftServer.getServer();
             if (server != null && !server.isServerRunning()) {
-                cache.clear();
+                clear();
             }
         }
 

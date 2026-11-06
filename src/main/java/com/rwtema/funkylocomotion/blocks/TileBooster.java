@@ -9,7 +9,8 @@ import cofh.api.energy.IEnergyReceiver;
 
 public class TileBooster extends TileEntity implements IEnergyReceiver {
 
-    public final EnergyStorage energy = new EnergyStorage(TilePusher.maxTiles * TilePusher.powerPerTile);
+    public final EnergyStorage energy = new EnergyStorage(
+        TilePusher.energyCapacity(TilePusher.maxTiles, TilePusher.powerPerTile));
 
     @Override
     public boolean canUpdate() {

@@ -2,7 +2,6 @@ package com.rwtema.funkylocomotion.blocks;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.entity.Entity;
@@ -27,11 +26,13 @@ public abstract class TileMovingBase extends TileEntity {
     public boolean isAir = true;
     public int time = 0;
     public int maxTime = 0;
+    /** Client render only: 0 while the final step is still interpolating, 1 once settled. */
+    public int finishRenderTicks = 0;
     public NBTTagCompound block;
     public NBTTagCompound desc;
     public int dir = -1;
     public int lightLevel = 0;
-    public int lightOpacity = 255;
+    public int lightOpacity = 0;
     public int scheduledTickTime = -1;
     public int scheduledTickPriority;
 
@@ -81,36 +82,54 @@ public abstract class TileMovingBase extends TileEntity {
     @Override
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
+        readMoveDataFromNBT(tag);
+    }
 
+    /**
+     * Reads only the mover-specific fields. Split out from {@link #readFromNBT(NBTTagCompound)}
+     * so the persistence format can be tested without a registered tile entity id.
+     */
+    protected void readMoveDataFromNBT(NBTTagCompound tag) {
         block = tag.getCompoundTag("BlockTag");
         desc = tag.getCompoundTag("DescTag");
         time = tag.getInteger("Time");
         maxTime = tag.getInteger("MaxTime");
-        dir = tag.getByte("Dir");
+        dir = tag.hasKey("Dir") ? tag.getByte("Dir") : -1;
 
         isAir = block.hasNoTags();
 
-        if (tag.hasKey("Collisions", 10)) collisions = AxisTags(tag.getTagList("Collisions", 10));
+        collisions = tag.hasKey("Collisions", 9) ? AxisTags(tag.getTagList("Collisions", 10)) : blank;
 
-        lightLevel = tag.getByte("Light");
-        lightOpacity = tag.getShort("Opacity");
+        lightLevel = clamp(tag.hasKey("Light") ? tag.getByte("Light") : 0, 0, 15);
+        lightOpacity = clamp(tag.hasKey("Opacity") ? tag.getShort("Opacity") : 0, 0, 255);
 
-        if (tag.hasKey("TimeTime", 3)) {
+        if (tag.hasKey("TickTime", 3)) {
             scheduledTickTime = tag.getInteger("TickTime");
             scheduledTickPriority = tag.getInteger("TickPriority");
+        } else {
+            scheduledTickTime = -1;
+            scheduledTickPriority = 0;
         }
     }
 
     @Override
     public void writeToNBT(NBTTagCompound tag) {
         super.writeToNBT(tag);
-        tag.setTag("BlockTag", block);
-        tag.setTag("DescTag", desc);
+        writeMoveDataToNBT(tag);
+    }
+
+    /**
+     * Writes only the mover-specific fields. Split out from {@link #writeToNBT(NBTTagCompound)}
+     * so the persistence format can be tested without a registered tile entity id.
+     */
+    protected void writeMoveDataToNBT(NBTTagCompound tag) {
+        tag.setTag("BlockTag", block != null ? block : new NBTTagCompound());
+        tag.setTag("DescTag", desc != null ? desc : new NBTTagCompound());
         tag.setInteger("Time", time);
         tag.setInteger("MaxTime", maxTime);
         tag.setByte("Dir", (byte) dir);
 
-        if (collisions.length > 0) tag.setTag("Collisions", TagsAxis(collisions));
+        if (collisions != null && collisions.length > 0) tag.setTag("Collisions", TagsAxis(collisions));
 
         if (lightLevel != 0) tag.setByte("Light", (byte) lightLevel);
         if (lightOpacity != 0) tag.setShort("Opacity", (short) lightOpacity);
@@ -121,7 +140,12 @@ public abstract class TileMovingBase extends TileEntity {
         }
     }
 
+    private static int clamp(int value, int min, int max) {
+        return value < min ? min : Math.min(value, max);
+    }
+
     public Vec3 getMovVec() {
+        if (maxTime <= 0) return Vec3.createVectorHelper(0, 0, 0);
         double d = 1.0 / maxTime;
         if (dir < 0 || dir >= 6) return Vec3.createVectorHelper(0, 0, 0);
 
@@ -134,17 +158,13 @@ public abstract class TileMovingBase extends TileEntity {
     public void updateEntity() {
         if (maxTime == 0) return;
 
-        if (worldObj.isRemote) {
-            time = time + 1 - 1;
-        }
-
         Vec3 mov = getMovVec();
 
         Set<Entity> entityList = new HashSet<Entity>();
 
         time++;
 
-        for (AxisAlignedBB bb : getTransformedColisions()) {
+        for (AxisAlignedBB bb : getTransformedCollisions()) {
             List<Entity> entities = worldObj.getEntitiesWithinAABB(Entity.class, bb.expand(0, 0.1, 0));
             entityList.addAll(entities);
         }
@@ -152,26 +172,54 @@ public abstract class TileMovingBase extends TileEntity {
         for (Entity a : entityList) {
 
             if (!a.isDead) {
-                Map<Entity, Vec3> map = EntityMovingEventHandler.getMovementMap(side);
-                if (!map.containsKey(a)) {
-                    for (AxisAlignedBB bb : getTransformedColisions()) {
-                        if (a.boundingBox.intersectsWith(bb)) {
-                            if (a.boundingBox.minY > bb.maxY - 0.2) {
-                                a.boundingBox.offset(0, bb.maxY - a.boundingBox.minY, 0);
-                            }
-                        } else if (dir == 0 && a.motionY <= 0 && a.boundingBox.intersectsWith(bb.offset(0, 0.2, 0))) {
-                            a.boundingBox.offset(0, bb.maxY - a.boundingBox.minY, 0);
+                java.util.Set<Entity> moved = EntityMovingEventHandler.getMovementSet(side);
+                if (!moved.contains(a)) {
+                    boolean onPlatform = false;
+                    for (AxisAlignedBB bb : getTransformedCollisions()) {
+                        // bb is the platform's position after this tick's motion.
+                        // Align the rider with its previous top so the shared move
+                        // below applies the motion exactly once (snapping to bb.maxY
+                        // and then moving again made riders sink and bounce).
+                        double adjustment = riderTopAdjustment(a.boundingBox, bb, mov.yCoord, a.motionY);
+                        if (!Double.isNaN(adjustment)) {
+                            a.boundingBox.offset(0, adjustment, 0);
+                            onPlatform = true;
                         }
                     }
 
-                    EntityMovingEventHandler.moveEntity(a, mov.xCoord, mov.yCoord, mov.zCoord);
+                    // Keep a rider supported: without this the downward carry
+                    // leaves onGround false, gravity builds up and the player
+                    // falls/catches on the platform once per tick.
+                    EntityMovingEventHandler.moveEntity(a, mov.xCoord, mov.yCoord, mov.zCoord, onPlatform);
 
-                    map.put(a, null);
+                    moved.add(a);
                 }
 
             }
         }
 
+    }
+
+    /**
+     * Y offset that puts a rider on the platform's top <em>before</em> this
+     * tick's motion, or NaN when the entity is not riding the platform. The
+     * caller then moves the entity by the platform's delta, so the motion is
+     * applied exactly once.
+     */
+    static double riderTopAdjustment(AxisAlignedBB entityBox, AxisAlignedBB platformBox, double moveY, double motionY) {
+        double previousTop = platformBox.maxY - moveY;
+        // A fast move can leave a rider up to |moveY| above (downward move) or
+        // inside (upward move) the platform's new top. Reach that far, plus the
+        // usual 0.2 tolerance, in both cases.
+        double reach = Math.abs(moveY) + 0.2;
+        if (entityBox.intersectsWith(platformBox)) {
+            if (entityBox.minY > platformBox.maxY - reach) return previousTop - entityBox.minY;
+        } else if (motionY <= 0 && entityBox.minY >= platformBox.maxY - 0.2
+            && entityBox.minY <= platformBox.maxY + reach
+            && entityBox.intersectsWith(platformBox.getOffsetBoundingBox(0, reach, 0))) {
+                return previousTop - entityBox.minY;
+            }
+        return Double.NaN;
     }
 
     public AxisAlignedBB getCombinedCollisions() {
@@ -200,7 +248,7 @@ public abstract class TileMovingBase extends TileEntity {
         return bb;
     }
 
-    public AxisAlignedBB[] getTransformedColisions() {
+    public AxisAlignedBB[] getTransformedCollisions() {
         AxisAlignedBB[] tbbs = new AxisAlignedBB[collisions.length];
         double h = offset(false);
         ForgeDirection dir = ForgeDirection.getOrientation(this.dir);
@@ -211,14 +259,36 @@ public abstract class TileMovingBase extends TileEntity {
         return tbbs;
     }
 
+    /**
+     * @deprecated Typo kept for binary compatibility. Use {@link #getTransformedCollisions()}.
+     */
+    @Deprecated
+    public AxisAlignedBB[] getTransformedColisions() {
+        return getTransformedCollisions();
+    }
+
     public float progress() {
-        return time >= maxTime ? 1 : (time + Proxy.renderTimeOffset) / (maxTime);
+        if (maxTime <= 0 || time >= maxTime) return 1;
+        return (time + Proxy.renderTimeOffset) / (maxTime);
     }
 
     public double offset(boolean t) {
-        if (time >= maxTime) return 0;
-        float f = t ? Proxy.renderTimeOffset : 0;
-        return (time + f) / (maxTime) - 1;
+        if (maxTime <= 0) return 0;
+        if (!t) {
+            if (time >= maxTime) return 0;
+            return (double) time / maxTime - 1;
+        }
+
+        // Rendering uses the same previous -> current interpolation as entities,
+        // not "current -> next". The old time + partial form put every moving
+        // block one tick ahead of its collision box and of the player standing on
+        // it. Keep the very last step interpolating for one tick, then pin the
+        // moved/ghost block at the destination.
+        if (time >= maxTime && finishRenderTicks > 0) return 0;
+        double ticks = (time >= maxTime ? maxTime - 1 : time - 1) + Proxy.renderTimeOffset;
+        if (ticks < 0) ticks = 0;
+        if (ticks > maxTime) ticks = maxTime;
+        return ticks / maxTime - 1;
     }
 
 }

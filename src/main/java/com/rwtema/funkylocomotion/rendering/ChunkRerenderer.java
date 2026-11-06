@@ -1,79 +1,33 @@
 package com.rwtema.funkylocomotion.rendering;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderGlobal;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.MathHelper;
 
-import com.rwtema.funkylocomotion.FunkyLocomotion;
-
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import gnu.trove.iterator.TIntIterator;
-import gnu.trove.set.hash.TIntHashSet;
 
-public class ChunkRerenderer {
+/**
+ * Compatibility-safe block update entry point for moving tile entities.
+ *
+ * <p>
+ * The old implementation indexed {@link RenderGlobal#worldRenderers} and called
+ * {@link net.minecraft.client.renderer.WorldRenderer#updateRenderer} directly.
+ * Angelica's Celeritas renderer replaces the vanilla renderer array with a
+ * 1x1x1 dummy grid (all coordinates collapse to index 0), so that path rebuilt
+ * the wrong chunk and is exactly the kind of direct chunk manipulation Angelica
+ * documents as unsafe. {@link RenderGlobal#markBlockForUpdate} is the supported
+ * path: vanilla marks the chunk dirty, Celeritas schedules its own section
+ * rebuild, and no renderer array is touched.
+ */
+public final class ChunkRerenderer {
 
-    static final TIntHashSet toRerenderSet = new TIntHashSet();
-
-    @SuppressWarnings("unchecked")
-    @SubscribeEvent
-    @SideOnly(Side.CLIENT)
-    public void reRenderChunks(TickEvent.RenderTickEvent event) {
-        if (toRerenderSet.isEmpty()) return;
-
-        final WorldRenderer[] worldRenderers = Minecraft.getMinecraft().renderGlobal.worldRenderers;
-        final EntityLivingBase renderViewEntity = Minecraft.getMinecraft().renderViewEntity;
-
-        ArrayList<WorldRenderer> renderersToUpdate = new ArrayList<WorldRenderer>();
-
-        for (TIntIterator iterator = toRerenderSet.iterator(); iterator.hasNext();) {
-            WorldRenderer worldRenderer = worldRenderers[iterator.next()];
-
-            if (worldRenderer != null) {
-                worldRenderer.markDirty();
-                renderersToUpdate.add(worldRenderer);
-            }
-        }
-
-        if (FunkyLocomotion.redrawChunksInstantly) {
-            for (WorldRenderer worldRenderer : renderersToUpdate) {
-                worldRenderer.updateRenderer(renderViewEntity);
-            }
-        } else {
-            List worldRenderersToUpdate = Minecraft.getMinecraft().renderGlobal.worldRenderersToUpdate;
-
-            worldRenderersToUpdate.removeAll(renderersToUpdate);
-            worldRenderersToUpdate.addAll(0, renderersToUpdate);
-        }
-
-        toRerenderSet.clear();
-    }
+    private ChunkRerenderer() {}
 
     @SideOnly(Side.CLIENT)
     public static void markBlock(int x, int y, int z) {
         Minecraft mc = Minecraft.getMinecraft();
-        RenderGlobal renderGlobal = mc.renderGlobal;
+        if (mc == null || mc.renderGlobal == null || mc.theWorld == null) return;
 
-        int dx = MathHelper.bucketInt(x, 16) % renderGlobal.renderChunksWide;
-        if (dx < 0) dx += renderGlobal.renderChunksWide;
-
-        int dy = MathHelper.bucketInt(y, 16) % renderGlobal.renderChunksTall;
-        if (dy < 0) dy += renderGlobal.renderChunksTall;
-
-        int dz = MathHelper.bucketInt(z, 16) % renderGlobal.renderChunksDeep;
-        if (dz < 0) dz += renderGlobal.renderChunksDeep;
-
-        int i = (dz * renderGlobal.renderChunksTall + dy) * renderGlobal.renderChunksWide + dx;
-
-        toRerenderSet.add(i);
-
-        renderGlobal.markBlockForUpdate(x, y, z);
+        mc.renderGlobal.markBlockForUpdate(x, y, z);
     }
 }
