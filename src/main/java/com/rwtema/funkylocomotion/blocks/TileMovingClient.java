@@ -60,6 +60,8 @@ public class TileMovingClient extends TileMovingBase {
 
         if (time < maxTime) {
             super.updateEntity();
+        } else if (finishRenderTicks == 0) {
+            finishRenderTicks = 1;
         }
     }
 
@@ -99,6 +101,9 @@ public class TileMovingClient extends TileMovingBase {
         block = worldObj.getBlock(xCoord, yCoord, zCoord);
         meta = worldObj.getBlockMetadata(xCoord, yCoord, zCoord);
         time = maxTime;
+        // The real destination block is already in the world: pin the ghost at
+        // the destination instead of replaying the final step as a duplicate.
+        finishRenderTicks = 1;
         render = true;
         error = false;
 
@@ -143,6 +148,7 @@ public class TileMovingClient extends TileMovingBase {
 
         time = tag.getInteger("Time");
         maxTime = tag.getInteger("MaxTime");
+        finishRenderTicks = 0;
 
         lightLevel = tag.getInteger("Light");
         lightOpacity = tag.getShort("Opacity");

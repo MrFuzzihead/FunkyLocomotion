@@ -26,6 +26,8 @@ public abstract class TileMovingBase extends TileEntity {
     public boolean isAir = true;
     public int time = 0;
     public int maxTime = 0;
+    /** Client render only: 0 while the final step is still interpolating, 1 once settled. */
+    public int finishRenderTicks = 0;
     public NBTTagCompound block;
     public NBTTagCompound desc;
     public int dir = -1;
@@ -271,9 +273,22 @@ public abstract class TileMovingBase extends TileEntity {
     }
 
     public double offset(boolean t) {
-        if (maxTime <= 0 || time >= maxTime) return 0;
-        float f = t ? Proxy.renderTimeOffset : 0;
-        return (time + f) / (maxTime) - 1;
+        if (maxTime <= 0) return 0;
+        if (!t) {
+            if (time >= maxTime) return 0;
+            return (double) time / maxTime - 1;
+        }
+
+        // Rendering uses the same previous -> current interpolation as entities,
+        // not "current -> next". The old time + partial form put every moving
+        // block one tick ahead of its collision box and of the player standing on
+        // it. Keep the very last step interpolating for one tick, then pin the
+        // moved/ghost block at the destination.
+        if (time >= maxTime && finishRenderTicks > 0) return 0;
+        double ticks = (time >= maxTime ? maxTime - 1 : time - 1) + Proxy.renderTimeOffset;
+        if (ticks < 0) ticks = 0;
+        if (ticks > maxTime) ticks = maxTime;
+        return ticks / maxTime - 1;
     }
 
 }
