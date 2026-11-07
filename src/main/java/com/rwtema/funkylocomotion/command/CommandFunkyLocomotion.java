@@ -53,8 +53,10 @@ public class CommandFunkyLocomotion extends CommandBase {
         return false;
     }
 
-    @Override
-    public int compareTo(Object o) {
-        return getCommandName().compareTo(((CommandFunkyLocomotion) o).getCommandName());
-    }
+    // No compareTo override: CommandBase already implements it correctly by
+    // comparing getCommandName() against any ICommand, not just instances of
+    // this class. The previous override cast the argument to
+    // CommandFunkyLocomotion, so sorting commands of different types
+    // (e.g. HelpFixer validating/sorting all commands) threw
+    // ClassCastException at server startup.
 }
