@@ -25,6 +25,7 @@ public class CommandFunkyLocomotionTest {
     /** Minimal stand-in for another mod's command, e.g. HelpFixer's own. */
     private static CommandBase namedCommand(final String name) {
         return new CommandBase() {
+
             @Override
             public String getCommandName() {
                 return name;
@@ -60,15 +61,21 @@ public class CommandFunkyLocomotionTest {
     @Test
     public void sortingMixedCommandTypesOrdersByName() {
         List<ICommand> commands = new ArrayList<ICommand>(
-            Arrays.<ICommand>asList(
-                namedCommand("zzz"),
-                new CommandFunkyLocomotion(),
-                namedCommand("aaa")));
+            Arrays.<ICommand>asList(namedCommand("zzz"), new CommandFunkyLocomotion(), namedCommand("aaa")));
         Collections.sort(commands);
 
-        assertEquals("aaa", commands.get(0).getCommandName());
-        assertEquals("funkylocomotion", commands.get(1).getCommandName());
-        assertEquals("zzz", commands.get(2).getCommandName());
+        assertEquals(
+            "aaa",
+            commands.get(0)
+                .getCommandName());
+        assertEquals(
+            "funkylocomotion",
+            commands.get(1)
+                .getCommandName());
+        assertEquals(
+            "zzz",
+            commands.get(2)
+                .getCommandName());
     }
 
     @Test
